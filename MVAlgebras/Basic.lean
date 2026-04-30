@@ -18,7 +18,6 @@ import Mathlib.Tactic
   to be a right identity, it being a left identity comes later
   Notice how two of the axioms are stated in the definition implicity,
   by saying that neg is involutive and + is a semigroup -/
-
 class MVAlgebra (A : Type*) extends AddSemigroup A, InvolutiveNeg A, Zero A where
   add_zero (x : A) : x + 0 = x
   add_neg_zero (x : A) : x + (- (0 : A)) = - (0 : A)
@@ -71,8 +70,6 @@ lemma lem₆ [MVAlgebra A]
     _ = - (- - y + x) + x + y := by rw[neg_switch x (-y)]
     _ = - (y + x) + (x + y) := by rw[add_assoc,neg_neg]
 
-namespace Basic
-
 instance (A : Type*) [MVAlgebra A] : AddCommMonoid A where
   add_zero := MVAlgebra.add_zero
   add_comm := by
@@ -110,26 +107,23 @@ instance [MVAlgebra A] : ONeg A where
   oNeg x y := x ⊙ (- y)
 
 @[simp]
-theorem neg_zero [MVAlgebra A] : (1 : A) = - (0 : A) := rfl
-theorem oTimes_neg_add [MVAlgebra A] (x y : A) : x ⊙ y = - (-x + -y) := rfl
-theorem oNeg_def [MVAlgebra A] (x y : A) : x ⊖ y = x ⊙ (-y) := rfl
-@[simp]
-theorem neg_switch [MVAlgebra A] (x y : A) : - (- x + y) + y = - (- y + x) + x :=
-  MVAlgebra.neg_switch _ _
+lemma neg_zero' [MVAlgebra A] : (1 : A) = - (0 : A) := rfl
+lemma oTimes_dual [MVAlgebra A] (x y : A) : x ⊙ y = - (-x + -y) := rfl
+lemma oNeg_def [MVAlgebra A] (x y : A) : x ⊖ y = x ⊙ (-y) := rfl
 
 @[simp]
 lemma oNeg_def' [MVAlgebra A] (x y : A) : x ⊖ y = - (- x + y) := by
-  rw[oNeg_def,oTimes_neg_add,neg_neg]
+  rw[oNeg_def,oTimes_dual,neg_neg]
 
 @[simp]
-theorem neg_one [MVAlgebra A] : - (1 : A) = 0 := by
+lemma neg_one [MVAlgebra A] : - (1 : A) = 0 := by
   calc - (1 : A)
-  _ = - - (0 : A) := by rw[neg_zero]
+  _ = - - (0 : A) := by rw[neg_zero']
   _ = 0 := by rw[neg_neg]
 
 @[simp]
-theorem add_one [MVAlgebra A] (x : A) : x + 1 = 1 := by
-  rw[neg_zero]
+lemma add_one [MVAlgebra A] (x : A) : x + 1 = 1 := by
+  rw[neg_zero']
   exact MVAlgebra.add_neg_zero _
 
 @[simp]
@@ -137,14 +131,14 @@ lemma one_add [MVAlgebra A] (x : A) : 1 + x = 1 := by
   rw[add_comm]
   exact add_one x
 
-theorem add_neg_oTimes [MVAlgebra A] {x y : A} : x + y = - ((- x) ⊙ (- y)) := by
+lemma add_dual [MVAlgebra A] {x y : A} : x + y = - ((- x) ⊙ (- y)) := by
   calc x + y
   _ = - - (x + y) := by rw[neg_neg]
   _ = - - (- - x + - - y) := by rw[neg_neg x,neg_neg y]
-  _ = - ((- x) ⊙ (- y)) := by rw[oTimes_neg_add]
+  _ = - ((- x) ⊙ (- y)) := by rw[oTimes_dual]
 
 @[simp]
-theorem add_neg [MVAlgebra A] (x : A) : x + - x = 1 := by
+lemma neg_canc' [MVAlgebra A] (x : A) : x + - x = 1 := by
   calc x + - x
   _ = - x + x := by rw[add_comm]
   _ = - (0 + x) + x := by rw[zero_add]
@@ -153,21 +147,21 @@ theorem add_neg [MVAlgebra A] (x : A) : x + - x = 1 := by
   _ = 1 := by rw[add_one]
 
 @[simp]
-lemma neg_add [MVAlgebra A] (x : A) : - x + x = 1 := by
+lemma neg_canc [MVAlgebra A] (x : A) : - x + x = 1 := by
   rw[add_comm]
-  exact add_neg x
+  exact neg_canc' x
 
 @[simp]
-theorem neg_add' {A : Type*} [MVAlgebra A] {x y : A} : - (x + y) = (- x) ⊙ (- y) := by
+lemma add_dual' {A : Type*} [MVAlgebra A] {x y : A} : - (x + y) = (- x) ⊙ (- y) := by
   calc - (x + y)
   _ = - (- - x + - - y) := by rw[neg_neg,neg_neg]
-  _ = (- x) ⊙ (- y) := by rw[oTimes_neg_add]
+  _ = (- x) ⊙ (- y) := by rw[oTimes_dual]
 
 @[simp]
-theorem neg_oTimes' {A : Type*} [MVAlgebra A] {x y : A} : - (x ⊙ y) = - x + - y := by
+lemma oTimes_dual' {A : Type*} [MVAlgebra A] {x y : A} : - (x ⊙ y) = - x + - y := by
   calc - (x ⊙ y)
   _ = - ((- - x) ⊙ (- - y)) := by rw[neg_neg,neg_neg]
-  _ = - x + - y := by rw[add_neg_oTimes]
+  _ = - x + - y := by rw[add_dual]
 
 lemma minus_add {A : Type*} [MVAlgebra A] {x y : A} : (x ⊖ y) + y = (y ⊖ x) + x := by
   calc (x ⊖ y) + y
@@ -175,4 +169,6 @@ lemma minus_add {A : Type*} [MVAlgebra A] {x y : A} : (x ⊖ y) + y = (y ⊖ x) 
   _ = - (- y + x) + x := by rw[neg_switch]
   _ = (y ⊖ x) + x := by simp
 
-end Basic
+@[simp]
+lemma neg_switch {A : Type*} [MVAlgebra A] (x y : A) :
+  - ((- x) + y) + y = (- ((- y) + x)) + x := MVAlgebra.neg_switch _ _
