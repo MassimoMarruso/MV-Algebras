@@ -1,17 +1,19 @@
 import MVAlgebras.Basic
 
 /- This file introduces what is called the "Natural Order" on MVAlgebras
- The beginning of the file introduces a notation ≤ without any propreties, then
- equivalent notions are derived. Finally, it is proven to be a partial order
+  The beginning of the file introduces a notation ≤ without any propreties, then
+  equivalent notions are derived. Finally, it is proven to be a partial order
   This proof is from the first chapter of Mundici -/
 
-instance [MVAlgebra A] : LE A where
+variable {A : Type*} [MVAlgebra A]
+
+instance : LE A where
   le x y := (- x) + y = 1
 
-lemma le_iff₁ [MVAlgebra A] {x y : A} : x ≤ y ↔ (- x) + y = 1 := by
+lemma le_iff₁ {x y : A} : x ≤ y ↔ (- x) + y = 1 := by
   tauto
 
-lemma le_iff₂ [MVAlgebra A] {x y : A} : x ≤ y ↔ x ⊙ (- y) = 0 := by
+lemma le_iff₂ {x y : A} : x ≤ y ↔ x ⊙ (- y) = 0 := by
   rw[le_iff₁]
   rw[oTimes_dual]
   rw[neg_neg]
@@ -24,7 +26,7 @@ lemma le_iff₂ [MVAlgebra A] {x y : A} : x ≤ y ↔ x ⊙ (- y) = 0 := by
     intro h
     rw[←neg_neg (- x + y),h]
 
-lemma le_iff₃ [MVAlgebra A] {x y : A} : x ≤ y ↔ y = x + (y ⊖ x) := by
+lemma le_iff₃ {x y : A} : x ≤ y ↔ y = x + (y ⊖ x) := by
   apply Iff.intro
   case mp =>
     intro h
@@ -46,7 +48,7 @@ lemma le_iff₃ [MVAlgebra A] {x y : A} : x ≤ y ↔ y = x + (y ⊖ x) := by
     _ = - (1 : A) := by rw[add_canc (x ⊖ y)]
     _ = 0 := by simp
 
-lemma le_iff₄ [MVAlgebra A] {x y : A} : x ≤ y ↔ ∃ (z : A), x + z = y := by
+lemma le_iff₄ {x y : A} : x ≤ y ↔ ∃ (z : A), x + z = y := by
   apply Iff.intro
   case mp =>
     intro h
@@ -85,7 +87,7 @@ instance {A : Type*} [MVAlgebra A] : PartialOrder A where
     _ = y + (x ⊙ (- y)) := by rw[oNeg_def]
     _ = y := by rw[h₁,add_zero]
 
-lemma neg_iff [MVAlgebra A] (a : A) (x : A) : a + x = 1 ∧ a⊙x = 0 ↔ -a = x := by
+lemma neg_iff (a : A) (x : A) : a + x = 1 ∧ a ⊙ x = 0 ↔ -a = x := by
   apply Iff.intro
   case mp =>
     intro ⟨h₁,h₂⟩
