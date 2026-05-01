@@ -138,7 +138,7 @@ lemma add_dual [MVAlgebra A] {x y : A} : x + y = - ((- x) ⊙ (- y)) := by
   _ = - ((- x) ⊙ (- y)) := by rw[oTimes_dual]
 
 @[simp]
-lemma neg_canc' [MVAlgebra A] (x : A) : x + - x = 1 := by
+lemma add_canc' [MVAlgebra A] (x : A) : x + - x = 1 := by
   calc x + - x
   _ = - x + x := by rw[add_comm]
   _ = - (0 + x) + x := by rw[zero_add]
@@ -147,9 +147,9 @@ lemma neg_canc' [MVAlgebra A] (x : A) : x + - x = 1 := by
   _ = 1 := by rw[add_one]
 
 @[simp]
-lemma neg_canc [MVAlgebra A] (x : A) : - x + x = 1 := by
+lemma add_canc [MVAlgebra A] (x : A) : - x + x = 1 := by
   rw[add_comm]
-  exact neg_canc' x
+  exact add_canc' x
 
 @[simp]
 lemma add_dual' {A : Type*} [MVAlgebra A] {x y : A} : - (x + y) = (- x) ⊙ (- y) := by
@@ -168,6 +168,24 @@ lemma minus_add {A : Type*} [MVAlgebra A] {x y : A} : (x ⊖ y) + y = (y ⊖ x) 
   _ = - (- x + y) + y := by simp
   _ = - (- y + x) + x := by rw[neg_switch]
   _ = (y ⊖ x) + x := by simp
+
+@[simp]
+lemma oTimes_comm [MVAlgebra A] (x y : A) : x ⊙ y = y ⊙ x := by
+  rw[oTimes_dual,oTimes_dual,add_comm]
+
+@[simp]
+lemma oTimes_canc [MVAlgebra A] (x : A) : x ⊙ (- x) = 0 := by
+  rw[oTimes_comm]
+  rw[oTimes_dual]
+  rw[neg_neg]
+  rw[add_comm]
+  rw[add_canc]
+  rw[neg_one]
+
+@[simp]
+lemma oTimes_canc' [MVAlgebra A] (x : A) : (- x) ⊙ x = 0 := by
+  rw[oTimes_comm]
+  rw[oTimes_canc]
 
 @[simp]
 lemma neg_switch {A : Type*} [MVAlgebra A] (x y : A) :

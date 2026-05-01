@@ -43,7 +43,7 @@ lemma le_iff₃ [MVAlgebra A] {x y : A} : x ≤ y ↔ y = x + (y ⊖ x) := by
     _ = - (- x + (y + x ⊖ y)) := by rw[add_comm y,minus_add,add_comm x]
     _ = - ((- x + y) + x ⊖ y) := by rw[add_assoc]
     _ = - (- (x ⊖ y) + x ⊖ y) := by simp
-    _ = - (1 : A) := by rw[neg_canc (x ⊖ y)]
+    _ = - (1 : A) := by rw[add_canc (x ⊖ y)]
     _ = 0 := by simp
 
 lemma le_iff₄ [MVAlgebra A] {x y : A} : x ≤ y ↔ ∃ (z : A), x + z = y := by
@@ -61,7 +61,7 @@ lemma le_iff₄ [MVAlgebra A] {x y : A} : x ≤ y ↔ ∃ (z : A), x + z = y := 
     _ = 1 + z := by simp
     _ = 1 := by rw[one_add]
 
-instance {A : Type*} [MVAlgebra A] : Preorder A where
+instance {A : Type*} [MVAlgebra A] : PartialOrder A where
   le x y := x ≤ y
   le_refl := by
     intro x
@@ -76,3 +76,30 @@ instance {A : Type*} [MVAlgebra A] : Preorder A where
     _ = x + x' + y' := by rw[add_assoc]
     _ = y + y' := by rw[hx]
     _ = z := by rw[hy]
+  le_antisymm := by
+    intro x y h₁ h₂
+    replace h₁ : x ⊙ (- y) = 0 := le_iff₂.mp h₁
+    replace h₂ : x = y + (x ⊖ y) := le_iff₃.mp h₂
+    calc x
+    _ = y + (x ⊖ y) := h₂
+    _ = y + (x ⊙ (- y)) := by rw[oNeg_def]
+    _ = y := by rw[h₁,add_zero]
+
+lemma neg_iff [MVAlgebra A] (a : A) (x : A) : a + x = 1 ∧ a⊙x = 0 ↔ -a = x := by
+  apply Iff.intro
+  case mp =>
+    intro ⟨h₁,h₂⟩
+    replace h₁ : - - a + x = 1 := by
+      rw[neg_neg]
+      exact h₁
+    replace h₁ := le_iff₁.mpr h₁
+    have h₂ : x ⊙ (- - a) = 0 := by
+      rw[neg_neg]
+      rw[oTimes_comm]
+      exact h₂
+    replace h₂ := le_iff₂.mpr h₂
+    exact le_antisymm h₁ h₂
+  case mpr =>
+    intro h
+    subst_eqs
+    exact ⟨add_canc' a,oTimes_canc a⟩
