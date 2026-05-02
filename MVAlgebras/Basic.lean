@@ -186,3 +186,9 @@ lemma oTimes_canc' (x : A) : (- x) ⊙ x = 0 := by
 @[simp]
 lemma neg_switch (x y : A) :
   - ((- x) + y) + y = (- ((- y) + x)) + x := MVAlgebra.neg_switch _ _
+
+@[simp]
+lemma neg_switch' (x y : A) :
+  ( x ⊖ y) + y = ( y ⊖ x) + x := by
+  rw[oNeg_def',oNeg_def']
+  apply _root_.neg_switch

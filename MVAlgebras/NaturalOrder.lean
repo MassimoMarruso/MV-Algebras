@@ -105,3 +105,84 @@ lemma neg_iff (a : A) (x : A) : a + x = 1 ∧ a ⊙ x = 0 ↔ -a = x := by
     intro h
     subst_eqs
     exact ⟨add_canc' a,oTimes_canc a⟩
+
+theorem neg_le' (x y : A) : x ≤ y ↔ - y ≤ - x := by
+  calc x ≤ y
+  _ ↔ -x + y = 1 := by rw[le_iff₁]
+  _ ↔ - (x ⊙ (- y)) = 1 := by rw[add_dual,neg_neg]
+  _ ↔ x ⊙ (- y) = 0 := by rw[neg_eq_iff_eq_neg,neg_one]
+  _ ↔ (- y) ⊙ (- - x) = 0 := by rw[oTimes_comm,neg_neg]
+  _ ↔ - y ≤ - x := by rw[le_iff₂]
+
+theorem add_le' (x y z : A) (h : x ≤ y) : x + z ≤ y + z := by
+  apply le_iff₄.mpr
+  replace ⟨w,h⟩ := le_iff₄.mp h
+  use w
+  calc x + z + w
+  _ = (x + w) + z := by rw[add_right_comm]
+  _ = y + z := by rw[h]
+
+theorem oTimes_le (x y z : A) (h : x ≤ y) : x ⊙ z ≤ y ⊙ z := by
+  apply (neg_le' (x ⊙ z) (y ⊙ z)).mpr
+  rw[oTimes_dual',oTimes_dual']
+  apply add_le'
+  exact (neg_le' _ _).mp h
+
+theorem sup_le' (x y z : A) (hx : x ≤ z) (hy : y ≤ z) : (x ⊖ y) + y ≤ z := by
+  replace hx := le_iff₁.mp hx
+  replace hy := le_iff₃.mp hy
+  apply le_iff₁.mpr
+  calc -(x ⊖ y + y) + z
+    _ = -((- - (x ⊖ y)) + y) + z := by rw[neg_neg]
+    _ = ((- (x ⊖ y)) ⊖ y) + z := by rw[oNeg_def' (- (x ⊖ y))]
+    _ = ((- (x ⊖ y)) ⊖ y) + (y + (z ⊖ y)) := by nth_rewrite 1 [hy] ; tauto
+    _ = ((- (x ⊖ y)) ⊖ y) + y + (z ⊖ y) := by rw[add_assoc]
+    _ = (y ⊖ (- (x ⊖ y))) + (- (x ⊖ y)) + (z ⊖ y) := by rw[neg_switch']
+    _ = (y ⊖ (- (x ⊖ y))) + (- x + y) + (z ⊖ y) := by nth_rewrite 3 [oNeg_def'] ; rw[neg_neg]
+    _ = (y ⊖ (- (x ⊖ y))) + (- x) + (y + (z ⊖ y)) := by rw[add_assoc,add_assoc,add_assoc]
+    _ = (y ⊖ (- (x ⊖ y))) + (- x) + z := by nth_rewrite 1 [←hy] ; tauto
+    _ = (y ⊖ (- (x ⊖ y))) + 1 := by rw[add_assoc,hx]
+    _ = 1 := by rw[add_one]
+
+lemma neg_sup' (y z : A) : (-y) ⊖ (-z) + (- z) = -(y ⊙ (-y + z)) := by
+    rw[neg_switch']
+    rw[oNeg_def]
+    rw[oTimes_dual,oTimes_dual]
+    rw[neg_neg,neg_neg,neg_neg,add_comm (-(z + -y)),add_comm z]
+
+instance : Lattice A where
+  sup x y := (x ⊖ y) + y
+  inf x y := x ⊙ (- x + y)
+  le_sup_left := by
+    intro x y
+    rw[oNeg_def',neg_switch]
+    apply le_iff₄.mpr
+    use (- (- y + x))
+    exact add_comm _ _
+  le_sup_right := by
+    intro x y
+    apply le_iff₄.mpr
+    use x ⊖ y
+    exact add_comm _ _
+  sup_le := sup_le'
+  le_inf := by
+    intro x y z hy hz
+    rw[neg_le']
+    replace hy : -y ≤ - x := (neg_le' _ _).mp hy
+    replace hz : -z ≤ - x := (neg_le' _ _).mp hz
+    rw[←neg_sup']
+    exact sup_le' _ _ _ hy hz
+  inf_le_left := by
+    intro x y
+    rw[oTimes_dual]
+    rw[neg_le',neg_neg]
+    rw[le_iff₄]
+    use -(-x + y)
+  inf_le_right := by
+    intro x y
+    rw[neg_le']
+    rw[←neg_sup']
+    rw[le_iff₄]
+    rw[add_comm]
+    use (-x)⊖(-y)
+  
