@@ -171,17 +171,29 @@ lemma oTimes_comm (x y : A) : x ⊙ y = y ⊙ x := by
 
 @[simp]
 lemma oTimes_canc (x : A) : x ⊙ (- x) = 0 := by
-  rw[oTimes_comm]
-  rw[oTimes_dual]
-  rw[neg_neg]
-  rw[add_comm]
-  rw[add_canc]
-  rw[neg_one]
+  calc x ⊙ (- x)
+  _ = - (- x + x) := by rw[oTimes_dual,neg_neg]
+  _ = - 1 := by rw[add_canc]
+  _ = 0 := by rw[neg_one]
 
 @[simp]
 lemma oTimes_canc' (x : A) : (- x) ⊙ x = 0 := by
   rw[oTimes_comm]
   rw[oTimes_canc]
+
+@[simp]
+lemma neg_iff_neg (x y : A) : x = y ↔ - x = - y := by
+  apply Iff.intro
+  case mp =>
+    intro h
+    subst_eqs
+    tauto
+  case mpr =>
+    intro h
+    calc x
+    _ = - - x := by rw[neg_neg]
+    _ = - - y := by rw[h]
+    _ = y := by rw[neg_neg]
 
 @[simp]
 lemma neg_switch (x y : A) :
