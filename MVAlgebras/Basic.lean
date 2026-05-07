@@ -19,13 +19,8 @@ import Mathlib.Tactic
   We follow Kolařík's proof exactly, defining MV-Algebras with the reduced set of axioms
   and then proving that any MVAlgebra is an AddCommMonoid-/
 
-namespace Basic
-
 class OAdd (A : Type*) where
   oAdd : A → A → A
-
-class Not (A : Type*) where
-  not : A → A
 
 --prefix:max (priority := default) "-"  => Not.not
 infixl:74 (priority := default) " ⊕ "   => OAdd.oAdd
@@ -39,7 +34,7 @@ class MVAlgebra (A : Type*) extends OAdd A, InvolutiveNeg A, Zero A where
 variable {A : Type*} [MVAlgebra A]
 
 @[simp]
-lemma oAdd_assoc (x y z : A) : ((x ⊕ y) ⊕ z) = x ⊕ (y ⊕ z) := MVAlgebra.oAdd_assoc _ _ _
+lemma oAdd_assoc (x y z : A) : ((x ⊕ y) ⊕ z) = x ⊕ (y ⊕ z) := MVAlgebra.oAdd_assoc x y z
 
 @[simp]
 lemma oAdd_zero (x : A) : (x ⊕ 0) = x := MVAlgebra.oAdd_zero _
@@ -269,5 +264,3 @@ instance oTimesMonoid (A : Type*) [MVAlgebra A] : CommMonoid A where
   one_mul := one_oTimes
   mul_one := oTimes_one
   mul_comm := oTimes_comm
-
-end Basic

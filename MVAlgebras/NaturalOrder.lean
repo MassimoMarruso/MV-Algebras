@@ -1,6 +1,5 @@
 import MVAlgebras.Basic
 
-open Basic
 /- This file introduces what is called the "Natural Order" on MVAlgebras
   The beginning of the file introduces a notation ≤ without any propreties, then
   equivalent notions are derived. Finally, it is proven to be a partial order
@@ -280,11 +279,9 @@ lemma le_one (x : A) : x ≤ 1 := by
   rw[not_one]
   apply zero_le''
 
-instance : OrderBot A where
+instance : BoundedOrder A where
   bot := 0
   bot_le := zero_le''
-
-instance : OrderTop A where
   top := 1
   le_top := le_one
 
