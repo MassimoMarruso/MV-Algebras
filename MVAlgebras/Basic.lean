@@ -30,8 +30,6 @@ class Not (A : Type*) where
 --prefix:max (priority := default) "-"  => Not.not
 infixl:74 (priority := default) " ⊕ "   => OAdd.oAdd
 
-variable (A : Type*) [OAdd A] [Neg A] (x y z : A)
-
 class MVAlgebra (A : Type*) extends OAdd A, InvolutiveNeg A, Zero A where
   oAdd_assoc (x y z : A) : ((x ⊕ y) ⊕ z) = x ⊕ (y ⊕ z)
   oAdd_zero (x : A) : (x ⊕ 0) = x
@@ -104,13 +102,21 @@ theorem oAdd_comm (x y : A) : (x ⊕ y) = y ⊕ x := by
   _ = 0 ⊕ (y ⊕ x) := by rw[neg_neg]
   _ = y ⊕ x := by rw[zero_oAdd (y ⊕ x)]
 
-instance : CommMonoid A where
-  mul := OAdd.oAdd
-  mul_assoc := oAdd_assoc
-  one := 0
-  mul_one := MVAlgebra.oAdd_zero
-  mul_comm := oAdd_comm
-  one_mul := zero_oAdd
+def nsmul (n : Nat) : A → A :=
+  match n with
+  |0 => (fun _ => 0)
+  |n + 1 => (fun x => (nsmul n x) ⊕ x)
+
+--we now have proven that A is an AddCommMonoid
+
+instance oAddMonoid (A : Type*) [MVAlgebra A] : AddCommMonoid A where
+  add := OAdd.oAdd
+  add_assoc := oAdd_assoc
+  zero := 0
+  add_zero := MVAlgebra.oAdd_zero
+  add_comm := oAdd_comm
+  zero_add := zero_oAdd
+  nsmul := nsmul
 
 -- we now begin to add the usual notation of 1, ⊙ and ⊖, along with implementing simp
 
@@ -120,8 +126,8 @@ class OTimes (A : Type*) where
 class ONeg (A : Type*) where
   oNeg : A → A → A
 
-infix:500 "⊙" => OTimes.oTimes
-infix:600 "⊖" => ONeg.oNeg
+infix:500 " ⊙ " => OTimes.oTimes
+infix:600 " ⊖ " => ONeg.oNeg
 
 instance : One A where
   one := - (0 : A)
@@ -138,8 +144,28 @@ lemma oTimes_dual (x y : A) : x ⊙ y = - (-x ⊕ -y) := rfl
 lemma oNeg_def (x y : A) : x ⊖ y = x ⊙ (-y) := rfl
 
 @[simp]
+lemma not_iff_not' (x y : A) : x = y ↔ - x = - y := by
+  apply Iff.intro
+  case mp =>
+    intro h
+    subst_eqs
+    tauto
+  case mpr =>
+    intro h
+    calc x
+    _ = - - x := by rw[neg_neg]
+    _ = - - y := by rw[h]
+    _ = y := by rw[neg_neg]
+
+@[simp]
 lemma oNeg_def' (x y : A) : x ⊖ y = - (- x ⊕ y) := by
   rw[oNeg_def,oTimes_dual,neg_neg]
+
+@[simp]
+lemma not_switch' (x y : A) :
+  ((x ⊖ y) ⊕ y) = ( y ⊖ x) ⊕ x := by
+  rw[oNeg_def',oNeg_def']
+  apply not_switch
 
 @[simp]
 lemma not_one : - (1 : A) = 0 := by
@@ -195,6 +221,8 @@ lemma oNeg_oAdd {x y : A} : ((x ⊖ y) ⊕ y) = (y ⊖ x) ⊕ x := by
   _ = - (- y ⊕ x) ⊕ x := by rw[not_switch]
   _ = (y ⊖ x) ⊕ x := by simp
 
+--we now add an instance of CommMonoid, now with ⊙ being the operation
+
 @[simp]
 lemma oTimes_comm (x y : A) : x ⊙ y = y ⊙ x := by
   rw[oTimes_dual,oTimes_dual,oAdd_comm]
@@ -212,33 +240,34 @@ lemma oTimes_canc' (x : A) : (- x) ⊙ x = 0 := by
   rw[oTimes_canc]
 
 @[simp]
-lemma not_iff_not' (x y : A) : x = y ↔ - x = - y := by
-  apply Iff.intro
-  case mp =>
-    intro h
-    subst_eqs
-    tauto
-  case mpr =>
-    intro h
-    calc x
-    _ = - - x := by rw[neg_neg]
-    _ = - - y := by rw[h]
-    _ = y := by rw[neg_neg]
-
-@[simp]
-lemma oTimes_assoc (x y z : A) : x ⊙ (y ⊙ z) = (x ⊙ y) ⊙ z := by
+lemma oTimes_assoc (x y z : A) : (x ⊙ y) ⊙ z = x ⊙ (y ⊙ z) := by
   rw[not_iff_not']
-  calc - x ⊙ (y ⊙ z)
-  _ = (- x) ⊕ - (y ⊙ z) := by rw[oTimes_dual']
-  _ = (- x) ⊕ ((- y) ⊕ (- z)) := by rw[oTimes_dual']
-  _ = ((- x) ⊕ (- y)) ⊕ (- z) := by rw[oAdd_assoc]
-  _ = (- (x ⊙ y)) ⊕ (- z) := by rw[oTimes_dual']
-  _ = - ((x ⊙ y) ⊙ z) := by rw[←oTimes_dual']
+  calc - (x ⊙ y) ⊙ z
+  _ = (-(x ⊙ y) ⊕ -z) := by rw[oTimes_dual']
+  _ = (-x ⊕ -y) ⊕ -z := by rw[oTimes_dual']
+  _ = -x ⊕ (-y ⊕ -z) := by rw[oAdd_assoc]
+  _ = -x ⊕ -(y ⊙ z) := by rw[oTimes_dual']
+  _ = - (x ⊙ (y ⊙ z)) := by rw[←oTimes_dual']
 
 @[simp]
-lemma not_switch' (x y : A) :
-  ((x ⊖ y) ⊕ y) = ( y ⊖ x) ⊕ x := by
-  rw[oNeg_def',oNeg_def']
-  apply not_switch
+lemma one_oTimes (x : A) : 1 ⊙ x = x := by
+  rw[not_iff_not']
+  rw[oTimes_dual']
+  rw[not_one]
+  rw[zero_oAdd]
+
+@[simp]
+lemma oTimes_one (x : A) : x ⊙ 1 = x := by
+  rw[oTimes_comm]
+  rw[one_oTimes]
+
+
+instance oTimesMonoid (A : Type*) [MVAlgebra A] : CommMonoid A where
+  mul := (· ⊙ ·)
+  mul_assoc := oTimes_assoc
+  one := 1
+  one_mul := one_oTimes
+  mul_one := oTimes_one
+  mul_comm := oTimes_comm
 
 end Basic
