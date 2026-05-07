@@ -247,7 +247,7 @@ lemma oTimes_sup (x y z : A) : x ⊙ (y ⊔ z) = (x ⊙ y) ⊔ (x ⊙ z) := by
     apply h'
   exact le_antisymm le_h h_le
 
-lemma add_inf' (x y z : A) : (x ⊕ (y ⊓ z)) = (x ⊕ y) ⊓ (x ⊕ z) := by
+lemma oAdd_inf (x y z : A) : (x ⊕ (y ⊓ z)) = (x ⊕ y) ⊓ (x ⊕ z) := by
   rw[not_iff_not']
   rw[not_inf]
   rw[oAdd_dual']
@@ -255,3 +255,51 @@ lemma add_inf' (x y z : A) : (x ⊕ (y ⊓ z)) = (x ⊕ y) ⊓ (x ⊕ z) := by
   rw[oAdd_dual,oAdd_dual]
   rw[neg_neg,neg_neg]
   apply oTimes_sup
+
+lemma le_zero {x : A} (h : x ≤ 0) : x = 0 := by
+  suffices this : 0 = x from by apply this.symm
+  calc 0
+  _ = x ⊙ (- 0) := by rw[le_iff₂.mp h]
+  _ = x ⊙ 1 := by simp
+  _ = x := by simp
+
+lemma zero_le'' (x : A) : 0 ≤ x := by
+  rw[le_iff₄]
+  use x
+  simp
+
+lemma one_le' {x : A} (h : 1 ≤ x) : x = 1 := by
+  rw[not_iff_not']
+  rw[not_one]
+  apply le_zero
+  rw[←not_one]
+  apply (not_le' _ _).mp h
+
+lemma le_one (x : A) : x ≤ 1 := by
+  rw[not_le']
+  rw[not_one]
+  apply zero_le''
+
+instance : OrderBot A where
+  bot := 0
+  bot_le := zero_le''
+
+instance : OrderTop A where
+  top := 1
+  le_top := le_one
+
+instance : CanonicallyOrderedAdd A where
+  exists_add_of_le := by
+    intro x y
+    rw[le_iff₄]
+    tauto
+  le_add_self := by
+    intro x y
+    rw[le_iff₄]
+    use y
+    apply oAdd_comm
+  le_self_add := by
+    intro x y
+    rw[le_iff₄]
+    use y
+    tauto
