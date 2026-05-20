@@ -125,6 +125,11 @@ theorem oAdd_le (x y z : A) (h : x ≤ y) : (x ⊕ z) ≤ y ⊕ z := by
   _ = (x ⊕ w) ⊕ z := by rw[oAdd_assoc]
   _ = y ⊕ z := by rw[h]
 
+lemma le_oAdd (x y z : A) (h : x ≤ y) : (z ⊕ x) ≤ z ⊕ y := by
+  rw[oAdd_comm z x]
+  rw[oAdd_comm z y]
+  exact oAdd_le x y z h
+
 theorem oTimes_le (x y z : A) (h : x ≤ y) : x ⊙ z ≤ y ⊙ z := by
   suffices this : - (y ⊙ z) ≤ - (x ⊙ z) from by apply (not_le' _ _).mpr ; exact this
   suffices this : (- y ⊕ - z) ≤ - x ⊕ - z from by rw[oTimes_dual',oTimes_dual'] ; exact this

@@ -23,8 +23,8 @@ lemma map_not (f : F) {x : A} : - f x = f (- x) := MVAlgebraHomClass.map_not f x
 @[simp]
 lemma map_oAdd (f : F) {x y : A} : f (x ⊕ y) = (f x ⊕ f y) := MVAlgebraHomClass.map_oAdd f x y
 
-@[simp]
-lemma map_zero' (f : F) : f 0 = 0 := MVAlgebraHomClass.map_zero f
+instance : ZeroHomClass F A B where
+  map_zero := MVAlgebraHomClass.map_zero
 
 @[simp]
 lemma map_oTimes (f : F) {x y : A} : f (x ⊙ y) = f x ⊙ f y := by
@@ -33,12 +33,13 @@ lemma map_oTimes (f : F) {x y : A} : f (x ⊙ y) = f x ⊙ f y := by
   _ = - f (- x ⊕ - y) := by rw[map_not]
   _ = - (- f x ⊕ - f y) := by rw[map_oAdd,map_not,map_not]
 
-@[simp]
-lemma map_one' (f : F) : f 1 = 1 := by
-  calc f 1
-  _ = f (- 0) := by simp
-  _ = - f 0 := by rw[map_not]
-  _ = - 0 := by rw[map_zero']
+instance : OneHomClass F A B where
+  map_one := by
+    intro f
+    calc f 1
+    _ = f (- 0) := by simp
+    _ = - f 0 := by rw[map_not]
+    _ = - 0 := by rw[map_zero]
 
 lemma map_oNeg (f : F) {x y : A} : f (x ⊖ y) = f x ⊖ f y := by
   calc f (x ⊖ y)
@@ -69,14 +70,12 @@ lemma map_inf (f : F) (x y : A) : f (x ⊓ y) = f x ⊓ f y := by
   _ = f x ⊙ ((- f x) ⊕ f y) := by simp
   _ = f x ⊓ f y := by rfl
 
-instance : FunLike (A →⊕ B) A B where
+instance : MVAlgebraHomClass (A →⊕ B) A B where
   coe f := f.toFun
   coe_injective' f g h := by
     cases f
     cases g
     congr
-
-instance : MVAlgebraHomClass (A →⊕ B) A B where
   map_zero f := f.map_zero
   map_not f := f.map_not
   map_oAdd f := f.map_oAdd
@@ -84,20 +83,18 @@ instance : MVAlgebraHomClass (A →⊕ B) A B where
 instance (f : A →⊕ B) : AddMonoidHom A B where
   toFun := f.toFun
   map_add' _ _ := map_oAdd f
-  map_zero' := map_zero' f
+  map_zero' := map_zero f
 
 instance : AddMonoidHomClass F A B where
-  map_add := MVAlgebraHomClass.map_oAdd
-  map_zero := MVAlgebraHomClass.map_zero
+  map_add := map_oAdd
 
 instance (f : A →⊕ B) : MonoidHom A B where
   toFun := f.toFun
-  map_one' := map_one' f
+  map_one' := map_one f
   map_mul' _ _ := map_oTimes f
 
 instance : MonoidHomClass F A B where
   map_mul := map_oTimes
-  map_one := map_one'
 
 instance (f : A →⊕ B) : OrderHom A B where
   toFun := f.toFun
