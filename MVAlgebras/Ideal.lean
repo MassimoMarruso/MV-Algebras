@@ -264,8 +264,8 @@ lemma ideal_closure_mono : Monotone (ideal_closure : Set A → MVAlgebra_Ideal A
   exact hle (hin y hyL)
 
 open Classical in
-theorem ideal_closure_union (I : S) (z : A) :
-  ideal_closure ((I : Set A) ∪ {z} : Set A) = {x : A | ∃ (a : I), ∃ (n : Nat), x ≤ (n • z) ⊕ a} := by
+theorem ideal_closure_union (I : S) (z : A) : ideal_closure ((I : Set A) ∪ {z} : Set A) =
+  {x : A | ∃ (a : I), ∃ (n : Nat), x ≤ (n • z) ⊕ a} := by
   ext x
   apply Iff.intro
   case mp =>
@@ -470,7 +470,7 @@ theorem ideal_maximal_iff (J : MVAlgebra_Ideal A) : isMaximal J ↔
       replace hle : ((n • x) ⊕ a) = 1 := one_le' hle
       replace hle : - (n • x) ≤ a := by
         apply le_iff₂.mpr
-        rw[oTimes_dual]
+        rw[oMul_dual]
         rw[neg_neg,neg_neg]
         rw[not_iff_not']
         rw[←not_zero]

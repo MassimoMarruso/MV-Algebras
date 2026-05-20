@@ -104,7 +104,7 @@ def nsmul (n : Nat) : A → A :=
 
 --we now have proven that A is an AddCommMonoid
 
-instance oAddMonoid (A : Type*) [MVAlgebra A] : AddCommMonoid A where
+instance (A : Type*) [MVAlgebra A] : AddCommMonoid A where
   add := OAdd.oAdd
   add_assoc := oAdd_assoc
   zero := 0
@@ -115,27 +115,27 @@ instance oAddMonoid (A : Type*) [MVAlgebra A] : AddCommMonoid A where
 
 -- we now begin to add the usual notation of 1, ⊙ and ⊖, along with implementing simp
 
-class OTimes (A : Type*) where
-  oTimes : A → A → A
+class OMul (A : Type*) where
+  oMul : A → A → A
 
 class ONeg (A : Type*) where
   oNeg : A → A → A
 
-infix:500 " ⊙ " => OTimes.oTimes
+infix:500 " ⊙ " => OMul.oMul
 infix:600 " ⊖ " => ONeg.oNeg
 
 instance : One A where
   one := - (0 : A)
 
-instance : OTimes A where
-  oTimes x y := - ((- x) ⊕ - y)
+instance : OMul A where
+  oMul x y := - ((- x) ⊕ - y)
 
 instance : ONeg A where
   oNeg x y := x ⊙ (- y)
 
 @[simp]
 lemma not_zero : (1 : A) = - (0 : A) := rfl
-lemma oTimes_dual (x y : A) : x ⊙ y = - (-x ⊕ -y) := rfl
+lemma oMul_dual (x y : A) : x ⊙ y = - (-x ⊕ -y) := rfl
 lemma oNeg_def (x y : A) : x ⊖ y = x ⊙ (-y) := rfl
 
 @[simp]
@@ -154,7 +154,7 @@ lemma not_iff_not' (x y : A) : x = y ↔ - x = - y := by
 
 @[simp]
 lemma oNeg_def' (x y : A) : x ⊖ y = - (- x ⊕ y) := by
-  rw[oNeg_def,oTimes_dual,neg_neg]
+  rw[oNeg_def,oMul_dual,neg_neg]
 
 @[simp]
 lemma not_switch' (x y : A) :
@@ -182,7 +182,7 @@ lemma oAdd_dual {x y : A} : (x ⊕ y) = - ((- x) ⊙ (- y)) := by
   calc x ⊕ y
   _ = - - (x ⊕ y) := by rw[neg_neg]
   _ = - - (- - x ⊕ - - y) := by rw[neg_neg x,neg_neg y]
-  _ = - ((- x) ⊙ (- y)) := by rw[oTimes_dual]
+  _ = - ((- x) ⊙ (- y)) := by rw[oMul_dual]
 
 @[simp]
 lemma oAdd_canc (x : A) : (x ⊕ - x) = 1 := by
@@ -202,10 +202,10 @@ lemma oAdd_canc' (x : A) : (- x ⊕ x) = 1 := by
 lemma oAdd_dual' {x y : A} : - (x ⊕ y) = (- x) ⊙ (- y) := by
   calc - (x ⊕ y)
   _ = - (- - x ⊕ - - y) := by rw[neg_neg,neg_neg]
-  _ = (- x) ⊙ (- y) := by rw[oTimes_dual]
+  _ = (- x) ⊙ (- y) := by rw[oMul_dual]
 
 @[simp]
-lemma oTimes_dual' {x y : A} : - (x ⊙ y) = - x ⊕ - y := by
+lemma oMul_dual' {x y : A} : - (x ⊙ y) = - x ⊕ - y := by
   calc - (x ⊙ y)
   _ = - ((- - x) ⊙ (- - y)) := by rw[neg_neg,neg_neg]
   _ = - x ⊕ - y := by rw[oAdd_dual]
@@ -219,48 +219,48 @@ lemma oNeg_oAdd {x y : A} : ((x ⊖ y) ⊕ y) = (y ⊖ x) ⊕ x := by
 --we now add an instance of CommMonoid, now with ⊙ being the operation
 
 @[simp]
-lemma oTimes_comm (x y : A) : x ⊙ y = y ⊙ x := by
-  rw[oTimes_dual,oTimes_dual,oAdd_comm]
+lemma oMul_comm (x y : A) : x ⊙ y = y ⊙ x := by
+  rw[oMul_dual,oMul_dual,oAdd_comm]
 
 @[simp]
-lemma oTimes_canc (x : A) : x ⊙ (- x) = 0 := by
+lemma oMul_canc (x : A) : x ⊙ (- x) = 0 := by
   calc x ⊙ (- x)
-  _ = - (- x ⊕ x) := by rw[oTimes_dual,neg_neg]
+  _ = - (- x ⊕ x) := by rw[oMul_dual,neg_neg]
   _ = - 1 := by rw[oAdd_canc']
   _ = 0 := by rw[not_one]
 
 @[simp]
-lemma oTimes_canc' (x : A) : (- x) ⊙ x = 0 := by
-  rw[oTimes_comm]
-  rw[oTimes_canc]
+lemma oMul_canc' (x : A) : (- x) ⊙ x = 0 := by
+  rw[oMul_comm]
+  rw[oMul_canc]
 
 @[simp]
-lemma oTimes_assoc (x y z : A) : (x ⊙ y) ⊙ z = x ⊙ (y ⊙ z) := by
+lemma oMul_assoc (x y z : A) : (x ⊙ y) ⊙ z = x ⊙ (y ⊙ z) := by
   rw[not_iff_not']
   calc - (x ⊙ y) ⊙ z
-  _ = (-(x ⊙ y) ⊕ -z) := by rw[oTimes_dual']
-  _ = (-x ⊕ -y) ⊕ -z := by rw[oTimes_dual']
+  _ = (-(x ⊙ y) ⊕ -z) := by rw[oMul_dual']
+  _ = (-x ⊕ -y) ⊕ -z := by rw[oMul_dual']
   _ = -x ⊕ (-y ⊕ -z) := by rw[oAdd_assoc]
-  _ = -x ⊕ -(y ⊙ z) := by rw[oTimes_dual']
-  _ = - (x ⊙ (y ⊙ z)) := by rw[←oTimes_dual']
+  _ = -x ⊕ -(y ⊙ z) := by rw[oMul_dual']
+  _ = - (x ⊙ (y ⊙ z)) := by rw[←oMul_dual']
 
 @[simp]
-lemma one_oTimes (x : A) : 1 ⊙ x = x := by
+lemma one_oMul (x : A) : 1 ⊙ x = x := by
   rw[not_iff_not']
-  rw[oTimes_dual']
+  rw[oMul_dual']
   rw[not_one]
   rw[zero_oAdd]
 
 @[simp]
-lemma oTimes_one (x : A) : x ⊙ 1 = x := by
-  rw[oTimes_comm]
-  rw[one_oTimes]
+lemma oMul_one (x : A) : x ⊙ 1 = x := by
+  rw[oMul_comm]
+  rw[one_oMul]
 
 
-instance oTimesMonoid (A : Type*) [MVAlgebra A] : CommMonoid A where
+instance (A : Type*) [MVAlgebra A] : CommMonoid A where
   mul := (· ⊙ ·)
-  mul_assoc := oTimes_assoc
+  mul_assoc := oMul_assoc
   one := 1
-  one_mul := one_oTimes
-  mul_one := oTimes_one
-  mul_comm := oTimes_comm
+  one_mul := one_oMul
+  mul_one := oMul_one
+  mul_comm := oMul_comm

@@ -27,9 +27,9 @@ instance : ZeroHomClass F A B where
   map_zero := MVAlgebraHomClass.map_zero
 
 @[simp]
-lemma map_oTimes (f : F) {x y : A} : f (x ⊙ y) = f x ⊙ f y := by
+lemma map_oMul (f : F) {x y : A} : f (x ⊙ y) = f x ⊙ f y := by
   calc f (x ⊙ y)
-  _ = f (- (- x ⊕ - y)) := by rw[oTimes_dual]
+  _ = f (- (- x ⊕ - y)) := by rw[oMul_dual]
   _ = - f (- x ⊕ - y) := by rw[map_not]
   _ = - (- f x ⊕ - f y) := by rw[map_oAdd,map_not,map_not]
 
@@ -44,7 +44,7 @@ instance : OneHomClass F A B where
 lemma map_oNeg (f : F) {x y : A} : f (x ⊖ y) = f x ⊖ f y := by
   calc f (x ⊖ y)
   _ = f (x ⊙ (- y)) := by rfl
-  _ = f x ⊙ f (- y) := by rw[map_oTimes]
+  _ = f x ⊙ f (- y) := by rw[map_oMul]
   _ = f x ⊙ (- f y) := by rw[map_not]
   _ = f x ⊖ f y := by rfl
 
@@ -66,7 +66,7 @@ lemma map_sup (f : F) (x y : A) : f (x ⊔ y) = f x ⊔ f y := by
 lemma map_inf (f : F) (x y : A) : f (x ⊓ y) = f x ⊓ f y := by
   calc f (x ⊓ y)
   _ = f (x ⊙ (- x ⊕ y)) := by rfl
-  _ = f x ⊙ f (- x ⊕ y) := by rw[map_oTimes]
+  _ = f x ⊙ f (- x ⊕ y) := by rw[map_oMul]
   _ = f x ⊙ ((- f x) ⊕ f y) := by simp
   _ = f x ⊓ f y := by rfl
 
@@ -91,10 +91,10 @@ instance : AddMonoidHomClass F A B where
 instance (f : A →⊕ B) : MonoidHom A B where
   toFun := f.toFun
   map_one' := map_one f
-  map_mul' _ _ := map_oTimes f
+  map_mul' _ _ := map_oMul f
 
 instance : MonoidHomClass F A B where
-  map_mul := map_oTimes
+  map_mul := map_oMul
 
 instance (f : A →⊕ B) : OrderHom A B where
   toFun := f.toFun

@@ -17,7 +17,7 @@ lemma le_iff₁ {x y : A} : x ≤ y ↔ ((- x) ⊕ y) = 1 := by
 lemma le_iff₂ {x y : A} : x ≤ y ↔ x ⊙ (- y) = 0 := by
   calc x ≤ y
   _ ↔ ((- x) ⊕ y) = 1 := by rw[le_iff₁]
-  _ ↔ - (x ⊙ (- y)) = 1 := by rw[oTimes_dual',neg_neg y]
+  _ ↔ - (x ⊙ (- y)) = 1 := by rw[oMul_dual',neg_neg y]
   _ ↔ - (x ⊙ (- y)) = - 0 := by rw[not_zero]
   _ ↔ (x ⊙ (-y)) = 0 := by rw[←not_iff_not' _ 0]
 
@@ -97,14 +97,14 @@ lemma not_iff' (a : A) (x : A) : (a ⊕ x) = 1 ∧ a ⊙ x = 0 ↔ -a = x := by
     replace h₁ : -a ≤ x := le_iff₁.mpr h₁
     have h₂ : x ⊙ (- - a) = 0 := by
       rw[neg_neg]
-      rw[oTimes_comm]
+      rw[oMul_comm]
       exact h₂
     replace h₂ : x ≤ -a := le_iff₂.mpr h₂
     exact le_antisymm h₁ h₂
   case mpr =>
     intro h
     subst_eqs
-    exact ⟨oAdd_canc a,oTimes_canc a⟩
+    exact ⟨oAdd_canc a,oMul_canc a⟩
 
 theorem not_le' (x y : A) : x ≤ y ↔ - y ≤ - x := by
   calc x ≤ y
@@ -112,7 +112,7 @@ theorem not_le' (x y : A) : x ≤ y ↔ - y ≤ - x := by
   _ ↔ - (x ⊙ (- y)) = 1 := by rw[oAdd_dual,neg_neg]
   _ ↔ (x ⊙ (- y)) = - 1 := by rw[not_iff_not',neg_neg]
   _ ↔ x ⊙ (- y) = 0 := by rw[not_one]
-  _ ↔ (- y) ⊙ (- - x) = 0 := by rw[oTimes_comm,neg_neg]
+  _ ↔ (- y) ⊙ (- - x) = 0 := by rw[oMul_comm,neg_neg]
   _ ↔ - y ≤ - x := by rw[le_iff₂]
 
 theorem oAdd_le (x y z : A) (h : x ≤ y) : (x ⊕ z) ≤ y ⊕ z := by
@@ -130,16 +130,16 @@ lemma le_oAdd (x y z : A) (h : x ≤ y) : (z ⊕ x) ≤ z ⊕ y := by
   rw[oAdd_comm z y]
   exact oAdd_le x y z h
 
-theorem oTimes_le (x y z : A) (h : x ≤ y) : x ⊙ z ≤ y ⊙ z := by
+theorem oMul_le (x y z : A) (h : x ≤ y) : x ⊙ z ≤ y ⊙ z := by
   suffices this : - (y ⊙ z) ≤ - (x ⊙ z) from by apply (not_le' _ _).mpr ; exact this
-  suffices this : (- y ⊕ - z) ≤ - x ⊕ - z from by rw[oTimes_dual',oTimes_dual'] ; exact this
+  suffices this : (- y ⊕ - z) ≤ - x ⊕ - z from by rw[oMul_dual',oMul_dual'] ; exact this
   suffices this : -y ≤ - x from oAdd_le _ _ _ this
   exact (not_le' _ _).mp h
 
-theorem le_oTimes (x y z : A) (h : x ≤ y) : z ⊙ x ≤ z ⊙ y := by
-  nth_rw 1 [oTimes_comm]
-  nth_rw 2 [oTimes_comm]
-  exact oTimes_le _ _ _ h
+theorem le_oMul (x y z : A) (h : x ≤ y) : z ⊙ x ≤ z ⊙ y := by
+  nth_rw 1 [oMul_comm]
+  nth_rw 2 [oMul_comm]
+  exact oMul_le _ _ _ h
 
 theorem sup_le' (x y z : A) (hx : x ≤ z) (hy : y ≤ z) : ((x ⊖ y) ⊕ y) ≤ z := by
   replace hx := le_iff₁.mp hx
@@ -161,9 +161,9 @@ lemma not_sup' (y z : A) : ((-y) ⊖ (-z) ⊕ (- z)) = -(y ⊙ (-y ⊕ z)) := by
     calc (-y) ⊖ (-z) ⊕ (- z)
     _ = (-z) ⊖ (-y) ⊕ (-y) := by rw[not_switch']
     _ = (-z) ⊙ (- - y) ⊕ (- y) := by rw[oNeg_def]
-    _ = - (z ⊕ - y) ⊕ -y := by rw[oTimes_dual,neg_neg,neg_neg]
+    _ = - (z ⊕ - y) ⊕ -y := by rw[oMul_dual,neg_neg,neg_neg]
     _ = -y ⊕ - (- y ⊕ z) := by rw[oAdd_comm z,oAdd_comm]
-    _ = -(y ⊙ (-y ⊕ z)) := by rw[oTimes_dual,neg_neg]
+    _ = -(y ⊙ (-y ⊕ z)) := by rw[oMul_dual,neg_neg]
 
 instance : Lattice A where
   sup x y := (x ⊖ y) ⊕ y
@@ -225,29 +225,29 @@ lemma not_inf (x y : A) : - (x ⊓ y) = (-x) ⊔ (-y) := by
   rw[not_iff_not',neg_neg]
   rw[not_sup,neg_neg,neg_neg]
 
-lemma oTimes_le_dual (x y z : A) : x ⊙ y ≤ z ↔ x ≤ - y ⊕ z := by
+lemma oMul_le_dual (x y z : A) : x ⊙ y ≤ z ↔ x ≤ - y ⊕ z := by
   calc x ⊙ y ≤ z
   _ ↔ (- (x ⊙ y) ⊕ z) = 1 := by rw[le_iff₁]
-  _ ↔ ((- x ⊕ - y) ⊕ z) = 1 := by rw[oTimes_dual']
+  _ ↔ ((- x ⊕ - y) ⊕ z) = 1 := by rw[oMul_dual']
   _ ↔ (- x ⊕ (- y ⊕ z)) = 1 := by rw[oAdd_assoc]
   _ ↔ x ≤ - y ⊕ z := by rw[le_iff₁]
 
-lemma oTimes_sup (x y z : A) : x ⊙ (y ⊔ z) = (x ⊙ y) ⊔ (x ⊙ z) := by
+lemma oMul_sup (x y z : A) : x ⊙ (y ⊔ z) = (x ⊙ y) ⊔ (x ⊙ z) := by
   have h₁ : (x ⊙ y) ≤ x ⊙ (y ⊔ z) := by
-    apply le_oTimes
+    apply le_oMul
     exact le_sup_left
   have h₂ : (x ⊙ z) ≤ x ⊙ (y ⊔ z) := by
-    apply le_oTimes
+    apply le_oMul
     exact le_sup_right
   have h_le := (@sup_le_iff A _ _ _ _).mpr ⟨h₁,h₂⟩
   have le_h : x ⊙ (y ⊔ z) ≤ (x ⊙ y) ⊔ (x ⊙ z) := by
     let t := (x ⊙ y) ⊔ (x ⊙ z)
     have h₁' : x ⊙ y ≤ t := by unfold t ; apply le_sup_left
     have h₂' : x ⊙ z ≤ t := by unfold t ; apply le_sup_right
-    replace h₁' : y ≤ (- x) ⊕ t := by rw[←oTimes_le_dual,oTimes_comm] ; exact h₁'
-    replace h₂' : z ≤ (- x) ⊕ t := by rw[←oTimes_le_dual,oTimes_comm] ; exact h₂'
+    replace h₁' : y ≤ (- x) ⊕ t := by rw[←oMul_le_dual,oMul_comm] ; exact h₁'
+    replace h₂' : z ≤ (- x) ⊕ t := by rw[←oMul_le_dual,oMul_comm] ; exact h₂'
     have h' : y ⊔ z ≤ (- x) ⊕ t := sup_le h₁' h₂'
-    replace h' : x ⊙ (y ⊔ z) ≤ t := by rw[oTimes_comm,oTimes_le_dual] ; exact h'
+    replace h' : x ⊙ (y ⊔ z) ≤ t := by rw[oMul_comm,oMul_le_dual] ; exact h'
     apply h'
   exact le_antisymm le_h h_le
 
@@ -258,7 +258,7 @@ lemma oAdd_inf (x y z : A) : (x ⊕ (y ⊓ z)) = (x ⊕ y) ⊓ (x ⊕ z) := by
   rw[not_inf]
   rw[oAdd_dual,oAdd_dual]
   rw[neg_neg,neg_neg]
-  apply oTimes_sup
+  apply oMul_sup
 
 lemma le_zero {x : A} (h : x ≤ 0) : x = 0 := by
   suffices this : 0 = x from by apply this.symm
