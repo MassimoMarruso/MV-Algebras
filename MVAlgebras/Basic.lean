@@ -264,3 +264,5 @@ instance (A : Type*) [MVAlgebra A] : CommMonoid A where
   one_mul := one_oMul
   mul_one := oMul_one
   mul_comm := oMul_comm
+
+def isTrivial (A : Type*) [MVAlgebra A] : Prop := ∀ (x : A), x = 0
