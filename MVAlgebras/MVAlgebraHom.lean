@@ -1,5 +1,6 @@
 import MVAlgebras.Basic
 import MVAlgebras.NaturalOrder
+import MVAlgebras.Ideal
 
 class MVAlgebraHom (A : Type*) (B : Type*) [MVAlgebra A] [MVAlgebra B] where
   toFun : A → B
@@ -15,7 +16,7 @@ class MVAlgebraHomClass (F : Type*) (A : outParam Type*) (B : outParam Type*)
   map_not (f : F) (x : A) : - (f x) = f (- x)
   map_oAdd (f : F) (x y : A) : f (x ⊕ y) = f x ⊕ f y
 
-variable {A B : Type*} {F : Type*} [MVAlgebra A] [MVAlgebra B] [MVAlgebraHomClass F A B]
+variable {A B : Type*} {F S T : Type*} [MVAlgebra A] [MVAlgebra B] [MVAlgebraHomClass F A B]
 
 @[simp]
 lemma map_not (f : F) {x : A} : - f x = f (- x) := MVAlgebraHomClass.map_not f x
@@ -111,3 +112,78 @@ instance (f : A →⊕ B) : LatticeHom A B where
 instance : LatticeHomClass F A B where
   map_inf := map_inf
   map_sup := map_sup
+
+@[reducible]
+def comap (φ : F) (I : MVAlgebra_Ideal B) : MVAlgebra_Ideal A where
+  carrier := ⇑φ ⁻¹' ↑I
+  zero_mem := by
+    rw[Set.mem_preimage]
+    rw[map_zero]
+    apply zero_mem
+  le_mem := by
+    intro x y hx h_le
+    exact le_mem hx (monotone φ h_le)
+  oAdd_mem := by
+    intro x y
+    rw[Set.mem_preimage,Set.mem_preimage,Set.mem_preimage]
+    intro hx hy
+    rw[map_oAdd]
+    exact oAdd_mem hx hy
+
+@[reducible]
+def ker (f : F) : MVAlgebra_Ideal A := comap f (⊥ : MVAlgebra_Ideal B)
+
+lemma mem_comap {f : F} {I : T} {x : A} : x ∈ comap f I ↔ f x ∈ I := by
+  tauto
+
+lemma le_iff_oNeg (h : F) {x y : A} : h x ≤ h y ↔ x ⊖ y ∈ ker h := by
+  calc h x ≤ h y
+  _ ↔ (h x ⊖ h y) = 0 := by rw[le_iff₂,oNeg_def]
+  _ ↔ h (x ⊖ y) = 0 := by rw[map_oNeg]
+  _ ↔ h (x ⊖ y) ∈ (⊥ : MVAlgebra_Ideal B) := by rw[mem_bot_iff_zero]
+  _ ↔ x ⊖ y ∈ comap h (⊥ : MVAlgebra_Ideal B) := by rw[mem_comap]
+  _ ↔ x ⊖ y ∈ ker h := by rfl
+
+lemma ker_bot_iff_injective (f : F) : Function.Injective f ↔ ker f = (⊥ : MVAlgebra_Ideal A) := by
+  apply Iff.intro
+  case mp =>
+    intro h
+    ext x
+    suffices this : x ∈ ker f ↔ x ∈ (⊥ : MVAlgebra_Ideal A) from by apply this
+    rw[mem_bot_iff_zero]
+    unfold ker
+    rw[mem_comap]
+    rw[mem_bot_iff_zero]
+    calc f x = 0
+    _ ↔ f x = f 0 := by rw[map_zero]
+    _ ↔ x = 0 := by
+      apply Iff.intro
+      case mp => apply h
+      case mpr => tauto
+  case mpr =>
+    intro h x y hf
+    have hf' {x y : A} (hf : f x = f y) : (y ⊙ (- x)) = 0 := by
+      rw[←mem_bot_iff_zero]
+      rw[←h]
+      rw[mem_comap]
+      rw[mem_bot_iff_zero]
+      rw[map_oMul]
+      rw[←map_not]
+      rw[hf]
+      rw[oMul_canc]
+    have hf₁ : (y ⊙ (- x)) = 0 := hf' hf
+    have hf₂ : (x ⊙ (- y)) = 0 := hf' hf.symm
+    calc x
+    _ = 0 ⊕ x := by simp
+    _ = (y ⊙ (- x)) ⊕ x := by rw[hf₁]
+    _ = - ((- y) ⊕ (- - x)) ⊕ x := by simp
+    _ = - ((- y) ⊕ x) ⊕ x := by simp
+    _ = - ((- x) ⊕ y) ⊕ y := by rw[not_switch]
+    _ = ((- - x) ⊙ (- y)) ⊕ y := by simp
+    _ = (x ⊙ (- y)) ⊕ y := by simp
+    _ = ((- y) ⊙ x) ⊕ y := by simp
+    _ = (x ⊙ (- y)) ⊕ y := by simp
+    _ = 0 ⊕ y := by rw[hf₂]
+    _ = y := by simp
+
+--theorem ker_prime_iff_MVChain (f : F) : isPrime (ker f) ↔ (¬ isTrivial B ∧ )
