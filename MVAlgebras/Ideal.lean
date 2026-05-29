@@ -5,13 +5,11 @@ import Mathlib.Data.Multiset.UnionInter
 import Mathlib.Data.SetLike.Basic
 import Mathlib.Order.RelClasses
 
-@[ext]
-class MVAlgebra_Ideal (A : Type*) [MVAlgebra A] where
-  carrier : Set A
-  zero_mem : 0 ∈ carrier
-  le_mem {x y : A} : x ∈ carrier → y ≤ x → y ∈ carrier
-  oAdd_mem {x y : A} : x ∈ carrier → y ∈ carrier → (x ⊕ y) ∈ carrier
+namespace MVIdeal
 
+/-- An ideal of an MVAlgebra is a subset that contains zero, is closed under addition,
+and is donward closed
+-/
 @[ext]
 class MVAlgebra_IdealClass (S : Type*) (A : outParam Type*) [MVAlgebra A] extends
   (SetLike S A) where
@@ -19,28 +17,32 @@ class MVAlgebra_IdealClass (S : Type*) (A : outParam Type*) [MVAlgebra A] extend
   le_mem' {I : S} {x y : A} : x ∈ I → y ≤ x → y ∈ I
   oAdd_mem' {I : S} {x y : A} : x ∈ I → y ∈ I → (x ⊕ y) ∈ I
 
-variable {A : outParam Type*} {S : semiOutParam Type*} [MVAlgebra A]
+/-A concrete ideal of an MVAlgebra A-/
+@[ext]
+class MVAlgebra_Ideal (A : Type*) [MVAlgebra A] where
+  carrier : Set A
+  zero_mem : 0 ∈ carrier
+  le_mem {x y : A} : x ∈ carrier → y ≤ x → y ∈ carrier
+  oAdd_mem {x y : A} : x ∈ carrier → y ∈ carrier → (x ⊕ y) ∈ carrier
+
+variable {A : outParam Type*} {S : semiOutParam Type*} {S' : Type*} [MVAlgebra A]
   [MVAlgebra_IdealClass S A]
 
-lemma le_mem' {I : S} {x y : A} : x ∈ I → y ≤ x → y ∈ I := MVAlgebra_IdealClass.le_mem'
+lemma le_mem {I : S} {x y : A} : x ∈ I → y ≤ x → y ∈ I := MVAlgebra_IdealClass.le_mem'
 
-lemma oAdd_mem' {I : S} {x y : A} : x ∈ I → y ∈ I → (x ⊕ y) ∈ I := MVAlgebra_IdealClass.oAdd_mem'
+lemma oAdd_mem {I : S} {x y : A} : x ∈ I → y ∈ I → (x ⊕ y) ∈ I := MVAlgebra_IdealClass.oAdd_mem'
 
-instance : CoeSort (MVAlgebra_Ideal A) (Set A) where
+instance : SetLike (MVAlgebra_Ideal A) A where
   coe := fun I => I.carrier
+  coe_injective' := by
+    intro I J h
+    ext1
+    apply h
 
-instance : Coe (MVAlgebra_Ideal A) (Set A) where
-  coe := fun I => I.carrier
-
-lemma coe_eq (I : MVAlgebra_Ideal A) : I.carrier = (I : Set A) := rfl
-
-lemma le_mem {I : MVAlgebra_Ideal A} {x y : A} :
-  x ∈ (I : Set A) → y ≤ x → y ∈ (I : Set A) := I.le_mem
-
-lemma oAdd_mem {I : MVAlgebra_Ideal A} {x y : A} :
-  x ∈ (I : Set A) → y ∈ (I : Set A) → (x ⊕ y) ∈ (I : Set A) := I.oAdd_mem
-
-lemma zero_mem {I : MVAlgebra_Ideal A} : 0 ∈ (I : Set A) := I.zero_mem
+instance : MVAlgebra_IdealClass (MVAlgebra_Ideal A) A where
+  zero_mem' _ := MVAlgebra_Ideal.zero_mem
+  le_mem' := MVAlgebra_Ideal.le_mem
+  oAdd_mem' := MVAlgebra_Ideal.oAdd_mem
 
 instance : ZeroMemClass S A where
   zero_mem := MVAlgebra_IdealClass.zero_mem'
@@ -54,9 +56,11 @@ instance (I : MVAlgebra_Ideal A) : AddSubmonoid A where
     apply I.zero_mem
 
 instance : AddSubmonoidClass S A where
-  add_mem := oAdd_mem'
+  add_mem := oAdd_mem
   zero_mem := zero_mem
 
+/-- Might be able to remove this if it isn't used
+-/
 lemma coe_eq_iff {I J : MVAlgebra_Ideal A} : I = J ↔ (I : Set A) = (J : Set A) := by
   apply Iff.intro
   case mp =>
@@ -66,112 +70,114 @@ lemma coe_eq_iff {I J : MVAlgebra_Ideal A} : I = J ↔ (I : Set A) = (J : Set A)
     ext1
     apply h
 
-@[reducible]
-def bot : MVAlgebra_Ideal A where
-  carrier := {0}
-  zero_mem := rfl
-  le_mem := by
-    intro x y hx h_le
-    replace hx : x = 0 := by exact hx
-    subst_eqs
-    suffices this : y = 0 from by exact this
-    exact le_zero h_le
-  oAdd_mem := by
-    intro x y hx hy
-    replace hx : x = 0 := by exact hx
-    replace hy : y = 0 := by exact hy
-    subst_eqs
-    rw[oAdd_zero]
-    apply Set.mem_singleton
+@[implicit_reducible]
+instance : Bot (MVAlgebra_Ideal A) where
+  bot := {  carrier := {0}
+            zero_mem := rfl
+            le_mem := by
+              intro x y hx h_le
+              replace hx : x = 0 := by exact hx
+              subst_eqs
+              suffices this : y = 0 from by exact this
+              exact le_zero h_le
+            oAdd_mem := by
+              intro x y hx hy
+              replace hx : x = 0 := by exact hx
+              replace hy : y = 0 := by exact hy
+              subst_eqs
+              rw[oAdd_zero]
+              apply Set.mem_singleton }
 
-@[reducible]
-def top : MVAlgebra_Ideal A where
-  carrier := {x | x : A}
-  zero_mem := by use 0
-  le_mem := by
-    intro x y _ _
-    use y
-  oAdd_mem := by
-    intro x y _ _
-    use x ⊕ y
+@[implicit_reducible]
+instance : Top (MVAlgebra_Ideal A) where
+  top := {  carrier := {x | x : A}
+            zero_mem := by use 0
+            le_mem := by
+              intro x y _ _
+              use y
+            oAdd_mem := by
+              intro x y _ _
+              use x ⊕ y}
 
-@[reducible]
-def iInter {I : Type*} (ι : I → MVAlgebra_Ideal A) : MVAlgebra_Ideal A where
+/-- Indexed intersection of ideals
+-/
+@[implicit_reducible]
+def iInter {I : Type*} (ι : I → S) : MVAlgebra_Ideal A where
   carrier := Set.iInter (fun i => ι i)
   zero_mem := by
     intro J ⟨i,h⟩
     subst_eqs
-    suffices this : 0 ∈ ((ι i) : Set A) from by apply this
-    exact zero_mem
+    suffices this : 0 ∈ (ι i) from by apply this
+    apply zero_mem
   le_mem := by
     intro x y hx h_le _ ⟨i,h⟩
     subst_eqs
-    replace hx : ∀ (i : I), x ∈ ((ι i) : Set A) := by
+    replace hx : ∀ (i : I), x ∈ (ι i) := by
       apply Set.mem_iInter.mp
       exact hx
     exact le_mem (hx i) h_le
   oAdd_mem := by
     intro x y hx hy _ ⟨i,h⟩
     subst_eqs
-    replace hx : ∀ (i : I), x ∈ ((ι i) : Set A) := by
+    replace hx : ∀ (i : I), x ∈ (ι i) := by
       apply Set.mem_iInter.mp
       exact hx
-    replace hy : ∀ (i : I), y ∈ ((ι i) : Set A) := by
+    replace hy : ∀ (i : I), y ∈ (ι i) := by
       apply Set.mem_iInter.mp
       exact hy
     exact oAdd_mem (hx i) (hy i)
 
-@[reducible]
-def inter (I J : MVAlgebra_Ideal A)
-  : MVAlgebra_Ideal A where
-  carrier := I ∩ J
-  zero_mem := ⟨zero_mem,zero_mem⟩
-  le_mem := by
-    intro x y ⟨hxI,hxJ⟩ h_le
-    exact ⟨le_mem hxI h_le,le_mem hxJ h_le⟩
-  oAdd_mem := by
-    intro x y ⟨hxI,hxJ⟩ ⟨hyI,hyJ⟩
-    exact ⟨oAdd_mem hxI hyI, oAdd_mem hxJ hyJ⟩
+@[implicit_reducible]
+instance : Inter (MVAlgebra_Ideal A) where
+  inter := fun (I J : MVAlgebra_Ideal A) =>
+    {carrier := I ∩ J
+     zero_mem := ⟨zero_mem I,zero_mem J⟩
+     le_mem := by
+       intro x y ⟨hxI,hxJ⟩ h_le
+       exact ⟨le_mem hxI h_le,le_mem hxJ h_le⟩
+     oAdd_mem := by
+       intro x y ⟨hxI,hxJ⟩ ⟨hyI,hyJ⟩
+       exact ⟨oAdd_mem hxI hyI, oAdd_mem hxJ hyJ⟩ }
 
 open Classical in
- @[reducible]
- def ideal_closure (W : Set A) : MVAlgebra_Ideal A where
-  carrier := {x : A | ∃ (I : Multiset A), x ≤ (I.sum) ∧ (∀ (y : A), y ∈ I → y ∈ W)}
-  zero_mem := by
-    use {}
-    apply And.intro
-    case left =>
-      rfl
-    case right =>
-      tauto
-  le_mem := by
-    intro x y ⟨I,h,h'⟩ h_le
-    exact ⟨I,le_trans h_le h,h'⟩
-  oAdd_mem := by
-    intro x y ⟨Ix,hx,Wx⟩ ⟨Iy,hy,Wy⟩
-    use (Ix + Iy)
-    apply And.intro
-    case left =>
-      calc x ⊕ y
-      _ ≤ x ⊕ Iy.sum := le_oAdd y Iy.sum x hy
-      _ ≤ Ix.sum ⊕ Iy.sum := oAdd_le x Ix.sum Iy.sum hx
-      _ = Ix.sum + Iy.sum := rfl
-      _ = (Ix + Iy).sum := by rw[Multiset.sum_add]
-    case right =>
-      intro z h
-      replace h : z ∈ Ix ∨ z ∈ Iy := Multiset.mem_add.mp h
-      cases h
-      case inl h₁ =>
-        exact Wx z h₁
-      case inr h₁ =>
-        exact Wy z h₁
+ @[implicit_reducible]
+ def closure : Set A →  MVAlgebra_Ideal A := fun (W : Set A) =>
+  { carrier := {x : A | ∃ (I : Multiset A), x ≤ (I.sum) ∧ (∀ (y : A), y ∈ I → y ∈ W)}
+    zero_mem := by
+      use {}
+      apply And.intro
+      case left =>
+        rfl
+      case right =>
+        tauto
+    le_mem := by
+      intro x y ⟨I,h,h'⟩ h_le
+      exact ⟨I,le_trans h_le h,h'⟩
+    oAdd_mem := by
+      intro x y ⟨Ix,hx,Wx⟩ ⟨Iy,hy,Wy⟩
+      use (Ix + Iy)
+      apply And.intro
+      case left =>
+        calc x ⊕ y
+        _ ≤ x ⊕ Iy.sum := le_oAdd y Iy.sum x hy
+        _ ≤ Ix.sum ⊕ Iy.sum := oAdd_le x Ix.sum Iy.sum hx
+        _ = Ix.sum + Iy.sum := rfl
+        _ = (Ix + Iy).sum := by rw[Multiset.sum_add]
+      case right =>
+        intro z h
+        replace h : z ∈ Ix ∨ z ∈ Iy := Multiset.mem_add.mp h
+        cases h
+        case inl h₁ =>
+          exact Wx z h₁
+        case inr h₁ =>
+          exact Wy z h₁ }
 
-@[reducible]
+@[implicit_reducible]
 def sup (I J : MVAlgebra_Ideal A) : MVAlgebra_Ideal A :=
-  ideal_closure ((I : Set A) ∪ J)
+  closure (I ∪ J)
 
-lemma subset_ideal_closure (I : Set A) :
-  (I : Set A) ⊆ ideal_closure I := by
+lemma subset_closure (I : Set A) :
+  I ⊆ closure I := by
     intro x h
     use ({x} : Multiset A)
     apply And.intro
@@ -185,17 +191,15 @@ lemma subset_ideal_closure (I : Set A) :
       subst_eqs
       exact h
 
-lemma sum_mem' {I : MVAlgebra_Ideal A} {L : Multiset A}
-  (h : ∀ (x : A), x ∈ L → x ∈ (I : Set A)) : L.sum ∈ (I : Set A) := by
+lemma sum_mem {I : S} {L : Multiset A} (h : ∀ (x : A), x ∈ L → x ∈ I) : L.sum ∈ I := by
   apply Multiset.sum_induction
   case p_add =>
     intro _ _
     exact oAdd_mem
-  case p_zero => exact zero_mem
+  case p_zero => apply zero_mem
   case p_s => exact h
 
-lemma smul_mem {I : MVAlgebra_Ideal A} {n : Nat} {x : A} :
-  x ∈ (I : Set A) → n • x ∈ (I : Set A) := by
+lemma smul_mem {I : S} {n : Nat} {x : A} : x ∈ I → n • x ∈ I := by
   intro h
   let L := Multiset.replicate n x
   have h₁ : n • x = L.sum := by
@@ -217,7 +221,7 @@ lemma smul_mem {I : MVAlgebra_Ideal A} {n : Nat} {x : A} :
       _ = (Multiset.replicate (n + 1) x).sum :=
         by rw[Multiset.replicate_add]
   rw[h₁]
-  apply sum_mem'
+  apply sum_mem
   intro y h₃
   unfold L at h₃
   rw[Multiset.mem_replicate] at h₃
@@ -225,14 +229,13 @@ lemma smul_mem {I : MVAlgebra_Ideal A} {n : Nat} {x : A} :
   subst heq
   apply h
 
-lemma ideal_closure_eq (I : MVAlgebra_Ideal A) :
-  ideal_closure (I : Set A) = I := by
+lemma closure_eq (I : MVAlgebra_Ideal A) : closure I = I := by
   symm
   ext1
-  apply Set.Subset.antisymm (subset_ideal_closure _)
+  apply Set.Subset.antisymm (subset_closure _)
   intro x ⟨L,hle,hin⟩
   suffices this : x ∈ (I : Set A) from by apply this
-  exact le_mem (sum_mem' hin) hle
+  exact le_mem (sum_mem hin) hle
 
 instance : PartialOrder (MVAlgebra_Ideal A) where
   le I J := (I : Set A) ⊆ (J : Set A)
@@ -244,7 +247,7 @@ instance : PartialOrder (MVAlgebra_Ideal A) where
   le_trans I J K := by
     apply subset_trans
 
-lemma ideal_closure_mono : Monotone (ideal_closure : Set A → MVAlgebra_Ideal A) := by
+lemma closure_mono : Monotone (closure : Set A → MVAlgebra_Ideal A) := by
   intro I J hle x ⟨L,hSum,hin⟩
   use L
   apply And.intro
@@ -253,27 +256,27 @@ lemma ideal_closure_mono : Monotone (ideal_closure : Set A → MVAlgebra_Ideal A
   exact hle (hin y hyL)
 
 open Classical in
-theorem ideal_closure_union (I : MVAlgebra_Ideal A) (z : A) :
-  ideal_closure ((I : Set A) ∪ {z} : Set A) =
-  {x : A | ∃ (a : (I : Set A)), ∃ (n : Nat), x ≤ (n • z) ⊕ a} := by
+theorem closure_union (I : MVAlgebra_Ideal A) (z : A) :
+  closure (I ∪ {z} : Set A) =
+  {x : A | ∃ (a : I), ∃ (n : Nat), x ≤ (n • z) ⊕ a} := by
   ext x
   apply Iff.intro
   case mp =>
     intro ⟨L,hle,hin⟩
-    let R := Multiset.filter (fun (y : A) => ¬ Eq z y) L
-    let S := Multiset.filter (fun (y : A) => Eq z y) L
+    let R := Multiset.filter (fun (y : A) => ¬ z = y) L
+    let S := Multiset.filter (fun (y : A) => z = y) L
     have hadd : S + R = L := by
       unfold R
       unfold S
       rw[Multiset.filter_add_not]
-    replace h₁ : ∀ (y : A), y ∈ R → y ∈ (I : Set A) ∪ {z} := by
+    replace h₁ : ∀ (y : A), y ∈ R → y ∈ (I ∪ {z} : Set A) := by
       intro y h
       apply hin
       rw[←hadd]
       rw[Multiset.mem_add]
       right
       apply h
-    replace h₁ : ∀ (y : A), y ∈ R → y ∈ (I : Set A) := by
+    replace h₁ : ∀ (y : A), y ∈ R → y ∈ I := by
       intro y h
       cases h₁ y h
       case inl => assumption
@@ -291,7 +294,7 @@ theorem ideal_closure_union (I : MVAlgebra_Ideal A) (z : A) :
       unfold S
       rw[Multiset.filter_eq]
       rw[Multiset.card_replicate]
-    use ⟨R.sum,sum_mem' h₁⟩
+    use ⟨R.sum,sum_mem h₁⟩
     use S.card
     calc x
     _ ≤ L.sum := hle
@@ -364,8 +367,6 @@ theorem ideal_closure_union (I : MVAlgebra_Ideal A) (z : A) :
         apply hI
 
 instance : BoundedOrder (MVAlgebra_Ideal A) where
-  bot := bot
-  top := top
   le_top I x _ := by
     use x
   bot_le I x h := by
@@ -373,11 +374,11 @@ instance : BoundedOrder (MVAlgebra_Ideal A) where
     subst_eqs
     exact I.zero_mem
 
-lemma mem_bot_iff_zero {x : A} : x ∈ ((⊥ : MVAlgebra_Ideal A) : Set A) ↔ x = 0 := by
+lemma mem_bot_iff_zero {x : A} : x ∈ (⊥ : MVAlgebra_Ideal A) ↔ x = 0 := by
   tauto
 
 instance : Lattice (MVAlgebra_Ideal A) where
-  inf := inter
+  inf := fun (I J) => I ∩ J
   inf_le_left _ _ := Set.inter_subset_left
   inf_le_right _ _ := Set.inter_subset_right
   le_inf _ _ _ := Set.subset_inter
@@ -386,25 +387,26 @@ instance : Lattice (MVAlgebra_Ideal A) where
     intro I J
     calc I.carrier
     _ ⊆ I.carrier ∪ J.carrier := by apply Set.subset_union_left
-    _ ⊆ ideal_closure (I.carrier ∪ J.carrier) := by
-      apply subset_ideal_closure (I.carrier ∪ J.carrier)
+    _ ⊆ closure (I.carrier ∪ J.carrier) := by
+      apply subset_closure (I.carrier ∪ J.carrier)
   le_sup_right := by
     intro I J
     calc J.carrier
     _ ⊆ I.carrier ∪ J.carrier := by apply Set.subset_union_right
-    _ ⊆ ideal_closure (I.carrier ∪ J.carrier) := by
-      apply subset_ideal_closure (I.carrier ∪ J.carrier)
+    _ ⊆ closure (I.carrier ∪ J.carrier) := by
+      apply subset_closure (I.carrier ∪ J.carrier)
   sup_le := by
     intro I J K hIK hJK
     have hle : (I.carrier ∪ J) ≤ K := Set.union_subset hIK hJK
     calc sup I J
-    _ = ideal_closure (I.carrier ∪ J) := rfl
-    _ ≤ ideal_closure K := ideal_closure_mono hle
-    _ = K := ideal_closure_eq K
+    _ = closure (I.carrier ∪ J) := rfl
+    _ ≤ closure K := closure_mono hle
+    _ = K := closure_eq K
 
-lemma top_iff_mem_one {I : MVAlgebra_Ideal A} : 1 ∈ (I : Set A) ↔ I = (⊤ : MVAlgebra_Ideal A) := by
+lemma top_iff_mem_one {I : MVAlgebra_Ideal A} :
+  I = (⊤ : MVAlgebra_Ideal A) ↔ 1 ∈ I  := by
   apply Iff.intro
-  case mp =>
+  case mpr =>
     intro h
     ext x
     apply Iff.intro
@@ -414,19 +416,23 @@ lemma top_iff_mem_one {I : MVAlgebra_Ideal A} : 1 ∈ (I : Set A) ↔ I = (⊤ :
     case mpr =>
       intro _
       apply I.le_mem h (le_one x)
-  case mpr =>
+  case mp =>
     intro h
     rw[h]
     use 1
 
-def isMaximal (I : MVAlgebra_Ideal A) : Prop := I ≠ ⊤ ∧ ∀ (J : MVAlgebra_Ideal A), I < J → J = ⊤
+def isMaximal (I : MVAlgebra_Ideal A) : Prop :=
+  I ≠ ⊤ ∧ ∀ (J : MVAlgebra_Ideal A), I < J → J = ⊤
 
-theorem ideal_maximal_iff (J : MVAlgebra_Ideal A) : isMaximal J ↔
+class MaximalIdeal (A : Type*) [MVAlgebra A] extends MVAlgebra_Ideal A where
+  isMaximal' : carrier ≠ ⊤ ∧ ∀ (J : MVAlgebra_Ideal A), carrier < J → J = ⊤
+
+theorem maximal_iff (J : MVAlgebra_Ideal A) : isMaximal J ↔
   (∀ (x : A), ¬ x ∈ (J : Set A) ↔ ∃ (n : Nat), -(n • x) ∈ (J : Set A)) := by
   apply Iff.intro
   case mp =>
     intro ⟨hntop,hmax⟩ x
-    let K := ideal_closure ((J : Set A) ∪ {x})
+    let K := closure (J ∪ {x})
     have htop (hxJ : x ∉ (J : Set A)) : K = ⊤ := by
       apply hmax
       apply (Preorder.lt_iff_le_not_ge _ _).mpr
@@ -435,14 +441,13 @@ theorem ideal_maximal_iff (J : MVAlgebra_Ideal A) : isMaximal J ↔
         apply Set.le_iff_subset.mpr
         calc (J : Set A)
         _ ⊆ J ∪ {x}:= Set.subset_union_left
-        _ ⊆ ideal_closure ((J : Set A) ∪ {x}) :=
-          subset_ideal_closure ((J : Set A) ∪ {x})
+        _ ⊆ closure (J ∪ {x}) := subset_closure (J ∪ {x})
         _ = K := rfl
       case a.right =>
         intro h
-        have hxK : x ∈ (K : Set A) := by
+        have hxK : x ∈ K := by
           unfold K
-          apply subset_ideal_closure
+          apply subset_closure
           right
           rfl
         exact hxJ (h hxK)
@@ -450,14 +455,14 @@ theorem ideal_maximal_iff (J : MVAlgebra_Ideal A) : isMaximal J ↔
     case mp =>
       intro hxJ
       have hK : K = ⊤ := htop hxJ
-      replace hK (y : A) : y ∈ (K : Set A) := by
+      replace hK (y : A) : y ∈ K := by
         rw[hK]
         use y
       unfold K at hK
-      replace hK (y : A) : y ∈ {y : A | ∃ (a : ↑J), ∃ (n : Nat), y ≤ (n • x) ⊕ a} := by
-        rw[←ideal_closure_union]
+      replace hK (y : A) : y ∈ {y : A | ∃ (a : J), ∃ (n : Nat), y ≤ (n • x) ⊕ a} := by
+        rw[←closure_union]
         apply hK
-      replace hK (y : A) : ∃ (a : ↑J), ∃ (n : Nat), y ≤ (n • x) ⊕ a := by
+      replace hK (y : A) : ∃ (a : J), ∃ (n : Nat), y ≤ (n • x) ⊕ a := by
         apply hK
       have ⟨a,n,hle⟩ := hK 1
       replace ⟨a,haJ⟩ := a
@@ -474,15 +479,15 @@ theorem ideal_maximal_iff (J : MVAlgebra_Ideal A) : isMaximal J ↔
       apply le_mem haJ hle
     case mpr =>
       intro ⟨n,h⟩ hxJ
-      let K := ideal_closure ((J : Set A) ∪ {x})
+      let K := closure (J ∪ {x})
       have heq : J = K := by
-        calc (J : MVAlgebra_Ideal A)
-        _ = ideal_closure ((J : Set A)) := by rw[ideal_closure_eq]
-        _ = ideal_closure ((J : Set A) ∪ {x}) := by
+        calc J
+        _ = closure J := by rw[closure_eq]
+        _ = closure (J ∪ {x}) := by
           rw[Set.union_eq_left.mpr (Set.singleton_subset_iff.mpr hxJ)]
-        _ = (K : MVAlgebra_Ideal A) := by rfl
+        _ = K := by rfl
       apply hntop
-      apply top_iff_mem_one.mp
+      apply top_iff_mem_one.mpr
       rw[←oAdd_canc (n • x)]
       refine oAdd_mem ?_ h
       apply smul_mem hxJ
@@ -491,14 +496,14 @@ theorem ideal_maximal_iff (J : MVAlgebra_Ideal A) : isMaximal J ↔
     apply And.intro
     case left =>
       intro h₂
-      replace h₂ := top_iff_mem_one.mpr h₂
+      replace h₂ := top_iff_mem_one.mp h₂
       suffices this : 1 ∉ (J : Set A) from by
         exact this h₂
       apply (h 1).mpr
       use 1
       rw[one_smul]
       rw[not_one]
-      exact zero_mem
+      apply zero_mem
     case right =>
       intro I hle
       replace hle : (J : Set A) ⊂ (I : Set A) := by apply hle
@@ -516,24 +521,26 @@ theorem ideal_maximal_iff (J : MVAlgebra_Ideal A) : isMaximal J ↔
         rw[←Set.nonempty_iff_empty_ne]
         exact hnK
       have ⟨y,hy⟩ := Classical.choice hnK
-      apply top_iff_mem_one.mp
-      have hny : y ∉ (J : Set A) := by
+      apply top_iff_mem_one.mpr
+      have hny : y ∉ J := by
         unfold K at hy
         rw[Set.mem_diff] at hy
         apply hy.right
       have ⟨n,h₃⟩ := (h y).mp hny
       replace h₃ := hle.subset h₃
       rw[←oAdd_canc (n • y)]
-      refine I.oAdd_mem ?_ h₃
+      refine oAdd_mem ?_ h₃
       apply smul_mem
       unfold K at hy
       apply ((Set.mem_diff y).mp hy).left
 
 def isPrime (I : MVAlgebra_Ideal A) : Prop :=
-  ∀ {x y : A}, x ⊖ y ∈ (I : Set A) ∨ y ⊖ x ∈ (I : Set A)
+  ∀ {x y : A}, x ⊖ y ∈ I ∨ y ⊖ x ∈ I
 
 class Prime_Ideal A [MVAlgebra A] extends MVAlgebra_Ideal A where
   isPrime' : ∀ {x y : A}, x ⊖ y ∈ carrier ∨ y ⊖ x ∈ carrier
 
 instance (I : MVAlgebra_Ideal A) (h : isPrime I) : Prime_Ideal A where
   isPrime' := h
+
+end MVIdeal
