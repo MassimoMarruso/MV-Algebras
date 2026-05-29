@@ -6,10 +6,8 @@ import Mathlib.Tactic
   with the following further axioms
   x ⊕ ¬ 0 = ¬ 0 and
   ¬ (¬ x ⊕ y) ⊕ y = ¬ (¬y ⊕ x) ⊕ x
-  The usual notation for the operation here called ⊕ is ⊕
-  and we also change the notation from ¬ to - (it's a minus sign)
-  This allows the code to see it as an AddCommMonoid and InvolutiveNeg
-  with the two axioms above
+  We  change the notation from ¬ to - (it's a minus sign) to not
+  compete with the negation of Prop
   -/
 
 /-It is however proven in Miroslav Kolařík's "Indipendence of the axiomatic system
@@ -22,7 +20,6 @@ import Mathlib.Tactic
 class OAdd (A : Type*) where
   oAdd : A → A → A
 
---prefix:max (priority := default) "-"  => Not.not
 infixl:74 (priority := default) " ⊕ "   => OAdd.oAdd
 
 class MVAlgebra (A : Type*) extends OAdd A, InvolutiveNeg A, Zero A where
@@ -41,11 +38,13 @@ lemma oAdd_zero (x : A) : (x ⊕ 0) = x := MVAlgebra.oAdd_zero _
 
 @[simp]
 lemma oAdd_not_zero (x : A) : (x ⊕ (- (0 : A))) = - (0 : A) :=
-  MVAlgebra.oAdd_not_zero _
+  MVAlgebra.oAdd_not_zero x
 
 @[simp]
 lemma not_switch (x y : A) : ((- ((- x) ⊕ y)) ⊕ y) = (- ((- y) ⊕ x)) ⊕ x :=
-  MVAlgebra.not_switch _ _
+  MVAlgebra.not_switch x y
+
+/-now begins the proof, with several lemmas-/
 
 lemma lem₁ (x y : A) : (x ⊕ y) = x ⊕ (0 ⊕ y) := by
     calc x ⊕ y
@@ -62,7 +61,7 @@ lemma zero_oAdd (x : A) : (0 ⊕ x) = x := by
   calc 0 ⊕ x
     _ = (- (- 0 ⊕ (0 ⊕ x))) ⊕ (0 ⊕ x) := (lem₂ (0 ⊕ x)).symm
     _ = ((- ((- 0 ⊕ 0) ⊕ x)) ⊕ 0) ⊕ x := by rw[oAdd_assoc,oAdd_assoc]
-    _ = (- (- 0 ⊕ x)) ⊕ x := by rw[MVAlgebra.oAdd_zero,MVAlgebra.oAdd_zero]
+    _ = (- (- 0 ⊕ x)) ⊕ x := by rw[oAdd_zero,oAdd_zero]
     _ = x := lem₂ x
 
 lemma lem₄ (x y z : A) : ((- (- x ⊕ y)) ⊕ (y ⊕ z)) = (- (- y ⊕ x)) ⊕ (x ⊕ z) := by
@@ -107,7 +106,6 @@ def nsmul (n : Nat) : A → A :=
 instance (A : Type*) [MVAlgebra A] : AddCommMonoid A where
   add := OAdd.oAdd
   add_assoc := oAdd_assoc
-  zero := 0
   add_zero := MVAlgebra.oAdd_zero
   add_comm := oAdd_comm
   zero_add := zero_oAdd
@@ -136,6 +134,7 @@ instance : ONeg A where
 @[simp]
 lemma not_zero : (1 : A) = - (0 : A) := rfl
 lemma oMul_dual (x y : A) : x ⊙ y = - (-x ⊕ -y) := rfl
+@[simp]
 lemma oNeg_def (x y : A) : x ⊖ y = x ⊙ (-y) := rfl
 
 @[simp]
@@ -171,7 +170,7 @@ lemma not_one : - (1 : A) = 0 := by
 @[simp]
 lemma oAdd_one (x : A) : (x ⊕ 1) = 1 := by
   rw[not_zero]
-  exact MVAlgebra.oAdd_not_zero _
+  exact MVAlgebra.oAdd_not_zero x
 
 @[simp]
 lemma one_oAdd (x : A) : (1 ⊕ x) = 1 := by
@@ -185,7 +184,7 @@ lemma oAdd_dual {x y : A} : (x ⊕ y) = - ((- x) ⊙ (- y)) := by
   _ = - ((- x) ⊙ (- y)) := by rw[oMul_dual]
 
 @[simp]
-lemma oAdd_canc (x : A) : (x ⊕ - x) = 1 := by
+lemma oAdd_not_self (x : A) : (x ⊕ - x) = 1 := by
   calc x ⊕ - x
   _ = - x ⊕ x := by rw[oAdd_comm]
   _ = - (0 ⊕ x) ⊕ x := by rw[zero_oAdd]
@@ -194,9 +193,9 @@ lemma oAdd_canc (x : A) : (x ⊕ - x) = 1 := by
   _ = 1 := by rw[oAdd_one]
 
 @[simp]
-lemma oAdd_canc' (x : A) : (- x ⊕ x) = 1 := by
+lemma not_self_oAdd (x : A) : (- x ⊕ x) = 1 := by
   rw[oAdd_comm]
-  exact oAdd_canc x
+  exact oAdd_not_self x
 
 @[simp]
 lemma oAdd_dual' {x y : A} : - (x ⊕ y) = (- x) ⊙ (- y) := by
@@ -223,16 +222,16 @@ lemma oMul_comm (x y : A) : x ⊙ y = y ⊙ x := by
   rw[oMul_dual,oMul_dual,oAdd_comm]
 
 @[simp]
-lemma oMul_canc (x : A) : x ⊙ (- x) = 0 := by
+lemma oMul_not_self (x : A) : x ⊙ (- x) = 0 := by
   calc x ⊙ (- x)
   _ = - (- x ⊕ x) := by rw[oMul_dual,neg_neg]
-  _ = - 1 := by rw[oAdd_canc']
+  _ = - 1 := by rw[not_self_oAdd]
   _ = 0 := by rw[not_one]
 
 @[simp]
-lemma oMul_canc' (x : A) : (- x) ⊙ x = 0 := by
+lemma not_self_oMul (x : A) : (- x) ⊙ x = 0 := by
   rw[oMul_comm]
-  rw[oMul_canc]
+  rw[oMul_not_self]
 
 @[simp]
 lemma oMul_assoc (x y z : A) : (x ⊙ y) ⊙ z = x ⊙ (y ⊙ z) := by
@@ -255,7 +254,6 @@ lemma one_oMul (x : A) : 1 ⊙ x = x := by
 lemma oMul_one (x : A) : x ⊙ 1 = x := by
   rw[oMul_comm]
   rw[one_oMul]
-
 
 instance (A : Type*) [MVAlgebra A] : CommMonoid A where
   mul := (· ⊙ ·)
