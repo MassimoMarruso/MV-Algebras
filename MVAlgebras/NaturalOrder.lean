@@ -1,10 +1,13 @@
 import MVAlgebras.Basic
+import Mathlib.Order.Lattice
 
 /- This file introduces what is called the "Natural Order" on MVAlgebras
   The beginning of the file introduces a notation ≤ without any propreties, then
   equivalent notions are derived. Finally, it is proven to be a partial order
   This proof is from the first chapter of Mundici
-  Later in the file it is proven to be a lattice-/
+  Later in the file it is proven to be a lattice -/
+
+namespace NaturalOrder
 
 variable {A : Type*} [MVAlgebra A]
 
@@ -45,7 +48,7 @@ lemma le_iff₃ {x y : A} : x ≤ y ↔ y = (x ⊕ (y ⊖ x)) := by
     _ = - ((x ⊖ y) ⊕ (- x ⊕ y)) := by rw[oAdd_comm (- x)]
     _ = - ((x ⊖ y) ⊕ - - (- x ⊕ y)) := by rw[neg_neg]
     _ = - ((x ⊖ y) ⊕ - (x ⊖ y)) := by rw[oNeg_def']
-    _ = - (1 : A) := by rw[oAdd_canc (x ⊖ y)]
+    _ = - (1 : A) := by rw[oAdd_not_self (x ⊖ y)]
     _ = 0 := by simp
 
 lemma le_iff₄ {x y : A} : x ≤ y ↔ ∃ (z : A), (x ⊕ z) = y := by
@@ -87,9 +90,9 @@ instance {A : Type*} [MVAlgebra A] : PartialOrder A where
     _ = y ⊕ (x ⊙ (- y)) := by rw[oNeg_def]
     _ = y := by rw[h₁,oAdd_zero]
 
-lemma not_iff' (a : A) (x : A) : (a ⊕ x) = 1 ∧ a ⊙ x = 0 ↔ -a = x := by
+lemma not_iff (a : A) (x : A) : -a = x ↔ (a ⊕ x) = 1 ∧ a ⊙ x = 0 := by
   apply Iff.intro
-  case mp =>
+  case mpr =>
     intro ⟨h₁,h₂⟩
     replace h₁ : (- - a ⊕ x) = 1 := by
       rw[neg_neg]
@@ -101,12 +104,12 @@ lemma not_iff' (a : A) (x : A) : (a ⊕ x) = 1 ∧ a ⊙ x = 0 ↔ -a = x := by
       exact h₂
     replace h₂ : x ≤ -a := le_iff₂.mpr h₂
     exact le_antisymm h₁ h₂
-  case mpr =>
+  case mp =>
     intro h
     subst_eqs
-    exact ⟨oAdd_canc a,oMul_canc a⟩
+    exact ⟨oAdd_not_self a,oMul_not_self a⟩
 
-theorem not_le' (x y : A) : x ≤ y ↔ - y ≤ - x := by
+lemma not_le (x y : A) : x ≤ y ↔ - y ≤ - x := by
   calc x ≤ y
   _ ↔ (-x ⊕ y) = 1 := by rw[le_iff₁]
   _ ↔ - (x ⊙ (- y)) = 1 := by rw[oAdd_dual,neg_neg]
@@ -115,7 +118,13 @@ theorem not_le' (x y : A) : x ≤ y ↔ - y ≤ - x := by
   _ ↔ (- y) ⊙ (- - x) = 0 := by rw[oMul_comm,neg_neg]
   _ ↔ - y ≤ - x := by rw[le_iff₂]
 
-theorem oAdd_le (x y z : A) (h : x ≤ y) : (x ⊕ z) ≤ y ⊕ z := by
+lemma antitone_not : Antitone (fun (x : A) => - x) := by
+  intro x y hle
+  suffices this : - y ≤ - x from by apply this
+  rw[←not_le]
+  apply hle
+
+lemma oAdd_le (x y z : A) (h : x ≤ y) : (x ⊕ z) ≤ y ⊕ z := by
   apply le_iff₄.mpr
   replace ⟨w,h⟩ := le_iff₄.mp h
   use w
@@ -130,18 +139,18 @@ lemma le_oAdd (x y z : A) (h : x ≤ y) : (z ⊕ x) ≤ z ⊕ y := by
   rw[oAdd_comm z y]
   exact oAdd_le x y z h
 
-theorem oMul_le (x y z : A) (h : x ≤ y) : x ⊙ z ≤ y ⊙ z := by
-  suffices this : - (y ⊙ z) ≤ - (x ⊙ z) from by apply (not_le' _ _).mpr ; exact this
+lemma oMul_le (x y z : A) (h : x ≤ y) : x ⊙ z ≤ y ⊙ z := by
+  suffices this : - (y ⊙ z) ≤ - (x ⊙ z) from by apply (not_le _ _).mpr ; exact this
   suffices this : (- y ⊕ - z) ≤ - x ⊕ - z from by rw[oMul_dual',oMul_dual'] ; exact this
   suffices this : -y ≤ - x from oAdd_le _ _ _ this
-  exact (not_le' _ _).mp h
+  exact (not_le _ _).mp h
 
-theorem le_oMul (x y z : A) (h : x ≤ y) : z ⊙ x ≤ z ⊙ y := by
+lemma le_oMul (x y z : A) (h : x ≤ y) : z ⊙ x ≤ z ⊙ y := by
   nth_rw 1 [oMul_comm]
   nth_rw 2 [oMul_comm]
   exact oMul_le _ _ _ h
 
-theorem sup_le' (x y z : A) (hx : x ≤ z) (hy : y ≤ z) : ((x ⊖ y) ⊕ y) ≤ z := by
+lemma sup_le (x y z : A) (hx : x ≤ z) (hy : y ≤ z) : ((x ⊖ y) ⊕ y) ≤ z := by
   replace hx := le_iff₁.mp hx
   replace hy := le_iff₃.mp hy
   apply le_iff₁.mpr
@@ -179,17 +188,17 @@ instance : Lattice A where
     apply le_iff₄.mpr
     use x ⊖ y
     exact oAdd_comm _ _
-  sup_le := sup_le'
+  sup_le := sup_le
   le_inf := by
     intro x y z hy hz
-    suffices this : - (y ⊙ (-y ⊕ z)) ≤ -x from by rw[not_le'] ; exact this
-    replace hy : -y ≤ - x := (not_le' _ _).mp hy
-    replace hz : -z ≤ - x := (not_le' _ _).mp hz
+    suffices this : - (y ⊙ (-y ⊕ z)) ≤ -x from by rw[not_le] ; exact this
+    replace hy : -y ≤ - x := (not_le _ _).mp hy
+    replace hz : -z ≤ - x := (not_le _ _).mp hz
     suffices this : ((-y) ⊖ (-z) ⊕ (- z)) ≤ - x from by rw[←not_sup'] ; exact this
-    exact sup_le' _ _ _ hy hz
+    exact sup_le _ _ _ hy hz
   inf_le_left := by
     intro x y
-    suffices h : - x ≤ - (x ⊙ (- x ⊕ y)) from by rw[not_le'] ; exact h
+    suffices h : - x ≤ - (x ⊙ (- x ⊕ y)) from by rw[not_le] ; exact h
     suffices h : - x ≤ (-x) ⊖ (-y) ⊕ (-y) from by rw[←not_sup'] ; exact h
     suffices h : - x ≤ (-y) ⊖ (-x) ⊕ (-x) from by rw[not_switch'] ; exact h
     rw[le_iff₄]
@@ -197,7 +206,7 @@ instance : Lattice A where
     rw[oAdd_comm]
   inf_le_right := by
     intro x y
-    suffices h : - y ≤ - (x ⊙ (-x ⊕ y)) from by rw[not_le'] ; exact h
+    suffices h : - y ≤ - (x ⊙ (-x ⊕ y)) from by rw[not_le] ; exact h
     suffices h : - y ≤ (-x) ⊖ (-y) ⊕ (- y) from by rw[←not_sup'] ; exact h
     suffices h : - y ≤ - y ⊕ (-x) ⊖ (-y) from by rw[oAdd_comm] ; exact h
     rw[le_iff₄]
@@ -225,14 +234,14 @@ lemma not_inf (x y : A) : - (x ⊓ y) = (-x) ⊔ (-y) := by
   rw[not_iff_not',neg_neg]
   rw[not_sup,neg_neg,neg_neg]
 
-lemma oMul_le_dual (x y z : A) : x ⊙ y ≤ z ↔ x ≤ - y ⊕ z := by
+lemma oMul_le_le_not_oAdd (x y z : A) : x ⊙ y ≤ z ↔ x ≤ - y ⊕ z := by
   calc x ⊙ y ≤ z
   _ ↔ (- (x ⊙ y) ⊕ z) = 1 := by rw[le_iff₁]
   _ ↔ ((- x ⊕ - y) ⊕ z) = 1 := by rw[oMul_dual']
   _ ↔ (- x ⊕ (- y ⊕ z)) = 1 := by rw[oAdd_assoc]
   _ ↔ x ≤ - y ⊕ z := by rw[le_iff₁]
 
-lemma oMul_sup (x y z : A) : x ⊙ (y ⊔ z) = (x ⊙ y) ⊔ (x ⊙ z) := by
+lemma oMul_sup_distrib (x y z : A) : x ⊙ (y ⊔ z) = (x ⊙ y) ⊔ (x ⊙ z) := by
   have h₁ : (x ⊙ y) ≤ x ⊙ (y ⊔ z) := by
     apply le_oMul
     exact le_sup_left
@@ -244,21 +253,21 @@ lemma oMul_sup (x y z : A) : x ⊙ (y ⊔ z) = (x ⊙ y) ⊔ (x ⊙ z) := by
     let t := (x ⊙ y) ⊔ (x ⊙ z)
     have h₁' : x ⊙ y ≤ t := by unfold t ; apply le_sup_left
     have h₂' : x ⊙ z ≤ t := by unfold t ; apply le_sup_right
-    replace h₁' : y ≤ (- x) ⊕ t := by rw[←oMul_le_dual,oMul_comm] ; exact h₁'
-    replace h₂' : z ≤ (- x) ⊕ t := by rw[←oMul_le_dual,oMul_comm] ; exact h₂'
-    have h' : y ⊔ z ≤ (- x) ⊕ t := sup_le h₁' h₂'
-    replace h' : x ⊙ (y ⊔ z) ≤ t := by rw[oMul_comm,oMul_le_dual] ; exact h'
+    replace h₁' : y ≤ (- x) ⊕ t := by rw[←oMul_le_le_not_oAdd,oMul_comm] ; exact h₁'
+    replace h₂' : z ≤ (- x) ⊕ t := by rw[←oMul_le_le_not_oAdd,oMul_comm] ; exact h₂'
+    have h' : y ⊔ z ≤ (- x) ⊕ t := sup_le y z ((- x) ⊕ t) h₁' h₂'
+    replace h' : x ⊙ (y ⊔ z) ≤ t := by rw[oMul_comm,oMul_le_le_not_oAdd] ; exact h'
     apply h'
   exact le_antisymm le_h h_le
 
-lemma oAdd_inf (x y z : A) : (x ⊕ (y ⊓ z)) = (x ⊕ y) ⊓ (x ⊕ z) := by
+lemma oAdd_inf_distrib (x y z : A) : (x ⊕ (y ⊓ z)) = (x ⊕ y) ⊓ (x ⊕ z) := by
   rw[not_iff_not']
   rw[not_inf]
   rw[oAdd_dual']
   rw[not_inf]
   rw[oAdd_dual,oAdd_dual]
   rw[neg_neg,neg_neg]
-  apply oMul_sup
+  apply oMul_sup_distrib
 
 lemma le_zero {x : A} (h : x ≤ 0) : x = 0 := by
   suffices this : 0 = x from by apply this.symm
@@ -267,26 +276,26 @@ lemma le_zero {x : A} (h : x ≤ 0) : x = 0 := by
   _ = x ⊙ 1 := by simp
   _ = x := by simp
 
-lemma zero_le'' (x : A) : 0 ≤ x := by
+lemma zero_le (x : A) : 0 ≤ x := by
   rw[le_iff₄]
   use x
   simp
 
-lemma one_le' {x : A} (h : 1 ≤ x) : x = 1 := by
+lemma one_le {x : A} (h : 1 ≤ x) : x = 1 := by
   rw[not_iff_not']
   rw[not_one]
   apply le_zero
   rw[←not_one]
-  apply (not_le' _ _).mp h
+  apply (not_le _ _).mp h
 
 lemma le_one (x : A) : x ≤ 1 := by
-  rw[not_le']
+  rw[not_le]
   rw[not_one]
-  apply zero_le''
+  apply zero_le
 
 instance : BoundedOrder A where
   bot := 0
-  bot_le := zero_le''
+  bot_le := zero_le
   top := 1
   le_top := le_one
 
@@ -305,3 +314,67 @@ instance : CanonicallyOrderedAdd A where
     rw[le_iff₄]
     use y
     tauto
+
+def isMVChain (A : Type*) [MVAlgebra A] : Prop := ∀ (x y : A), x ≤ y ∨ y ≤ x
+
+class MVChain (A : Type*) [MVAlgebra A] where
+  isMVChain' : isMVChain A
+
+open Classical in
+theorem min_def (x y : A) [MVChain A] : x ⊓ y = if (x ≤ y) then x else y := by
+    by_cases x ≤ y
+    case pos h₁ =>
+      have h' : x ≤ y ↔ True := by
+        rw[iff_true]
+        exact h₁
+      replace h' : (x ≤ y) = True := by rw[h']
+      calc x ⊓ y
+      _ = x ⊙ (- x ⊕ y) := rfl
+      _ = x ⊙ (- ( - - x) ⊙ (- y)) := by simp
+      _ = x ⊙ (- (x) ⊙ (- y)) := by simp
+      _ = x ⊙ (- 0) := by rw[le_iff₂.mp h₁]
+      _ = x ⊙ 1 := by simp
+      _ = x := by simp
+      _ = if True then x else y := by simp
+      _ = if x ≤ y then x else y := by rw[h'] ; simp
+    case neg h₂ =>
+      have h₂' : (x ≤ y) = False := by
+        rw[eq_iff_iff]
+        rw[iff_false]
+        exact h₂
+      have h : y ≤ x := by
+        refine Or.by_cases (MVChain.isMVChain' x y) ?h1 ?h2
+        case h1 =>
+          intro hq
+          exfalso
+          apply h₂ hq
+        case h2 =>
+          tauto
+      calc x ⊓ y
+      _ = y ⊓ x := by rw[inf_comm]
+      _ = y ⊙ ((- y) ⊕ x) := rfl
+      _ = y ⊙ (- ( - - y) ⊙ (- x)) := by simp
+      _ = y ⊙ (- (y) ⊙ (- x)) := by simp
+      _ = y ⊙ (- 0) := by rw[le_iff₂.mp h]
+      _ = y ⊙ 1 := by simp
+      _ = y := by simp
+      _ = if False then x else y := by simp
+      _ = if x ≤ y then x else y := by rw[h₂'] ; simp
+
+/-open Classical in
+noncomputable instance [MVChain A] : LinearOrder A where
+  le_total := MVChain.isMVChain'
+  toDecidableLE := by
+    apply Classical.decRel
+  compare x y :=
+  min_def x y := NaturalOrder.min_def x y
+  max_def := by
+    intro x y
+    calc x ⊔ y
+    _ = (- - x) ⊔ (- - y) := by simp
+    _ = - ((- x) ⊓ (- y)) := by rw[not_inf]
+    _ = - (if - x ≤ - y then - x else - y) := by rw[min_def]
+    _ = - (if y ≤ x then - x else - y) := by rw[←not_le]
+    _ = if y ≤ x then - - x else - - y := by rw[]-/
+
+end NaturalOrder

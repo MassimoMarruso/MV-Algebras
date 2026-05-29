@@ -17,6 +17,8 @@ import Mathlib.Tactic
   We follow Kolařík's proof exactly, defining MV-Algebras with the reduced set of axioms
   and then proving that any MVAlgebra is an AddCommMonoid-/
 
+namespace Basic
+
 class OAdd (A : Type*) where
   oAdd : A → A → A
 
@@ -264,3 +266,5 @@ instance (A : Type*) [MVAlgebra A] : CommMonoid A where
   mul_comm := oMul_comm
 
 def isTrivial (A : Type*) [MVAlgebra A] : Prop := ∀ (x : A), x = 0
+
+end Basic
