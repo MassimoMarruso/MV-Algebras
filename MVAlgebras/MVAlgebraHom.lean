@@ -1,6 +1,7 @@
 import MVAlgebras.Basic
 import MVAlgebras.NaturalOrder
 import MVAlgebras.Ideal
+import Mathlib.Order.Hom.Lattice
 
 @[ext]
 class MVAlgebraHom (A : Type*) (B : Type*) [MVAlgebra A] [MVAlgebra B] where
