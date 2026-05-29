@@ -4,6 +4,10 @@ import Mathlib.Data.Set.Basic
 import Mathlib.Data.Multiset.UnionInter
 import Mathlib.Data.SetLike.Basic
 import Mathlib.Order.RelClasses
+import Mathlib.Order.SetNotation
+import Mathlib.Algebra.BigOperators.Group.Multiset.Defs
+import Mathlib.Algebra.BigOperators.Group.Multiset.Basic
+import Mathlib.Algebra.Group.Submonoid.Defs
 
 open MVOrder
 
@@ -46,9 +50,6 @@ instance : MVAlgebra_IdealClass (MVAlgebra_Ideal A) A where
   le_mem' := MVAlgebra_Ideal.le_mem
   oAdd_mem' := MVAlgebra_Ideal.oAdd_mem
 
-instance : ZeroMemClass S A where
-  zero_mem := MVAlgebra_IdealClass.zero_mem'
-
 instance (I : MVAlgebra_Ideal A) : AddSubmonoid A where
   carrier := I.carrier
   add_mem' := by
@@ -59,7 +60,24 @@ instance (I : MVAlgebra_Ideal A) : AddSubmonoid A where
 
 instance : AddSubmonoidClass S A where
   add_mem := oAdd_mem
-  zero_mem := zero_mem
+  zero_mem := MVAlgebra_IdealClass.zero_mem'
+
+instance (I : MVAlgebra_Ideal A) : AddMonoid I where
+  add := (fun ⟨x,hx⟩ ⟨y,hy⟩ => ⟨x ⊕ y,I.oAdd_mem hx hy⟩)
+  add_assoc := by
+    intro _ _ _
+    ext1
+    apply add_assoc
+  zero := ⟨0,I.zero_mem⟩
+  zero_add := by
+    intro _
+    ext1
+    apply zero_add
+  add_zero := by
+    intro _
+    ext1
+    apply add_zero
+  nsmul := fun (n : Nat) (⟨x,hx⟩ : I) => ⟨(n • x),nsmul_mem hx n⟩
 
 /-- Might be able to remove this if it isn't used
 -/
@@ -71,35 +89,6 @@ lemma coe_eq_iff {I J : MVAlgebra_Ideal A} : I = J ↔ (I : Set A) = (J : Set A)
     intro h
     ext1
     apply h
-
-@[implicit_reducible]
-instance : Bot (MVAlgebra_Ideal A) where
-  bot := {  carrier := {0}
-            zero_mem := rfl
-            le_mem := by
-              intro x y hx h_le
-              replace hx : x = 0 := by exact hx
-              subst_eqs
-              suffices this : y = 0 from by exact this
-              exact le_zero h_le
-            oAdd_mem := by
-              intro x y hx hy
-              replace hx : x = 0 := by exact hx
-              replace hy : y = 0 := by exact hy
-              subst_eqs
-              rw[oAdd_zero]
-              apply Set.mem_singleton }
-
-@[implicit_reducible]
-instance : Top (MVAlgebra_Ideal A) where
-  top := {  carrier := {x | x : A}
-            zero_mem := by use 0
-            le_mem := by
-              intro x y _ _
-              use y
-            oAdd_mem := by
-              intro x y _ _
-              use x ⊕ y}
 
 /-- Indexed intersection of ideals
 -/
@@ -200,36 +189,6 @@ lemma sum_mem {I : S} {L : Multiset A} (h : ∀ (x : A), x ∈ L → x ∈ I) : 
     exact oAdd_mem
   case p_zero => apply zero_mem
   case p_s => exact h
-
-lemma smul_mem {I : S} {n : Nat} {x : A} : x ∈ I → n • x ∈ I := by
-  intro h
-  let L := Multiset.replicate n x
-  have h₁ : n • x = L.sum := by
-    induction n
-    case zero =>
-      unfold L
-      rw[Multiset.replicate_zero]
-      rfl
-    case succ n h₂ =>
-      calc (n + 1) • x
-      _ = (n • x) + (1 • x) := by rw[add_smul]
-      _ = (Multiset.replicate n x).sum + x := by rw[h₂,one_smul]
-      _ = (Multiset.replicate n x).sum + ({x} : Multiset A).sum :=
-        by rw[Multiset.sum_singleton]
-      _ = (Multiset.replicate n x).sum + (Multiset.replicate 1 x).sum :=
-        by rw[Multiset.replicate_one]
-      _ = (Multiset.replicate n x + Multiset.replicate 1 x).sum :=
-        by rw[Multiset.sum_add]
-      _ = (Multiset.replicate (n + 1) x).sum :=
-        by rw[Multiset.replicate_add]
-  rw[h₁]
-  apply sum_mem
-  intro y h₃
-  unfold L at h₃
-  rw[Multiset.mem_replicate] at h₃
-  have ⟨_,heq⟩ := h₃
-  subst heq
-  apply h
 
 lemma closure_eq (I : MVAlgebra_Ideal A) : closure I = I := by
   symm
@@ -369,6 +328,29 @@ theorem closure_union (I : MVAlgebra_Ideal A) (z : A) :
         apply hI
 
 instance : BoundedOrder (MVAlgebra_Ideal A) where
+  bot := {  carrier := {0}
+            zero_mem := rfl
+            le_mem := by
+              intro x y hx h_le
+              replace hx : x = 0 := by exact hx
+              subst_eqs
+              suffices this : y = 0 from by exact this
+              exact le_zero h_le
+            oAdd_mem := by
+              intro x y hx hy
+              replace hx : x = 0 := by exact hx
+              replace hy : y = 0 := by exact hy
+              subst_eqs
+              rw[oAdd_zero]
+              apply Set.mem_singleton }
+  top := {  carrier := {x | x : A}
+            zero_mem := by use 0
+            le_mem := by
+              intro x y _ _
+              use y
+            oAdd_mem := by
+              intro x y _ _
+              use x ⊕ y}
   le_top I x _ := by
     use x
   bot_le I x h := by
@@ -492,7 +474,7 @@ theorem maximal_iff (J : MVAlgebra_Ideal A) : isMaximal J ↔
       apply top_iff_mem_one.mpr
       rw[←oAdd_not_self (n • x)]
       refine oAdd_mem ?_ h
-      apply smul_mem hxJ
+      apply nsmul_mem hxJ
   case mpr =>
     intro h
     apply And.intro
@@ -503,7 +485,7 @@ theorem maximal_iff (J : MVAlgebra_Ideal A) : isMaximal J ↔
         exact this h₂
       apply (h 1).mpr
       use 1
-      rw[one_smul]
+      rw[one_nsmul]
       rw[not_one]
       apply zero_mem
     case right =>
@@ -532,7 +514,7 @@ theorem maximal_iff (J : MVAlgebra_Ideal A) : isMaximal J ↔
       replace h₃ := hle.subset h₃
       rw[←oAdd_not_self (n • y)]
       refine oAdd_mem ?_ h₃
-      apply smul_mem
+      apply nsmul_mem
       unfold K at hy
       apply ((Set.mem_diff y).mp hy).left
 

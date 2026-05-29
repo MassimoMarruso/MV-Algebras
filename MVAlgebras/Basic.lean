@@ -1,6 +1,5 @@
 import Mathlib.Algebra.Group.Basic
 import Mathlib.Order.Defs.PartialOrder
-import Mathlib.Tactic.Basic
 
 /- An MV Algebra is a commutative monoid with an involution ¬
   with the following further axioms
@@ -143,7 +142,7 @@ lemma not_iff_not' (x y : A) : x = y ↔ - x = - y := by
   case mp =>
     intro h
     subst_eqs
-    tauto
+    rfl
   case mpr =>
     intro h
     calc x

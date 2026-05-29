@@ -1,5 +1,7 @@
 import MVAlgebras.Basic
 import Mathlib.Order.Lattice
+import Mathlib.Order.BoundedOrder.Basic
+import Mathlib.Algebra.Order.Monoid.Canonical.Defs
 
 /- This file introduces what is called the "Natural Order" on MVAlgebras
   The beginning of the file introduces a notation ≤ without any propreties, then
@@ -13,7 +15,7 @@ instance [MVAlgebra A] : LE A where
   le x y := ((- x) ⊕ y) = 1
 
 lemma le_iff₁ {x y : A} : x ≤ y ↔ ((- x) ⊕ y) = 1 := by
-  tauto
+  rfl
 
 lemma le_iff₂ {x y : A} : x ≤ y ↔ x ⊙ (- y) = 0 := by
   calc x ≤ y
@@ -148,8 +150,10 @@ lemma oMul_le (x y z : A) (h : x ≤ y) : x ⊙ z ≤ y ⊙ z := by
   exact (not_le _ _).mp h
 
 lemma le_oMul (x y z : A) (h : x ≤ y) : z ⊙ x ≤ z ⊙ y := by
-  nth_rw 1 [oMul_comm]
-  nth_rw 2 [oMul_comm]
+  suffices this : x ⊙ z ≤ y ⊙ z from by
+    rw[oMul_comm z x]
+    rw[oMul_comm z y]
+    apply this
   exact oMul_le _ _ _ h
 
 lemma sup_le (x y z : A) (hx : x ≤ z) (hy : y ≤ z) : ((x ⊖ y) ⊕ y) ≤ z := by
@@ -159,12 +163,13 @@ lemma sup_le (x y z : A) (hx : x ≤ z) (hy : y ≤ z) : ((x ⊖ y) ⊕ y) ≤ z
   calc -(x ⊖ y ⊕ y) ⊕ z
     _ = -((- - (x ⊖ y)) ⊕ y) ⊕ z := by rw[neg_neg]
     _ = ((- (x ⊖ y)) ⊖ y) ⊕ z := by rw[oNeg_def' (- (x ⊖ y))]
-    _ = ((- (x ⊖ y)) ⊖ y) ⊕ (y ⊕ (z ⊖ y)) := by nth_rewrite 1 [hy] ; tauto
+    _ = ((- (x ⊖ y)) ⊖ y) ⊕ (y ⊕ (z ⊖ y)) := by rw[←hy]
     _ = ((- (x ⊖ y)) ⊖ y) ⊕ y ⊕ (z ⊖ y) := by rw[oAdd_assoc]
     _ = (y ⊖ (- (x ⊖ y))) ⊕ (- (x ⊖ y)) ⊕ (z ⊖ y) := by rw[not_switch']
-    _ = (y ⊖ (- (x ⊖ y))) ⊕ (- x ⊕ y) ⊕ (z ⊖ y) := by nth_rewrite 3 [oNeg_def'] ; rw[neg_neg]
+    _ = (y ⊖ (- (x ⊖ y))) ⊕ - -(- x ⊕ y) ⊕ (z ⊖ y) := by rw[oNeg_def' x y]
+    _ = (y ⊖ (- (x ⊖ y))) ⊕ (- x ⊕ y) ⊕ (z ⊖ y) := by rw[neg_neg]
     _ = (y ⊖ (- (x ⊖ y))) ⊕ (- x) ⊕ (y ⊕ (z ⊖ y)) := by rw[oAdd_assoc,oAdd_assoc,oAdd_assoc]
-    _ = (y ⊖ (- (x ⊖ y))) ⊕ (- x) ⊕ z := by nth_rewrite 1 [←hy] ; tauto
+    _ = (y ⊖ (- (x ⊖ y))) ⊕ (- x) ⊕ z := by rw[←hy]
     _ = (y ⊖ (- (x ⊖ y))) ⊕ 1 := by rw[oAdd_assoc,hx]
     _ = 1 := by rw[oAdd_one]
 
@@ -224,10 +229,10 @@ lemma sup_def (x y : A) : x ⊔ y = (x ⊖ y) ⊕ y := rfl
 lemma not_sup (x y : A) : - (x ⊔ y) = (-x) ⊓ (-y) := by
   rw[inf_def,sup_def]
   suffices this : - ((- - x) ⊖ (- - y) ⊕ - - y) = (-x) ⊙ (- - x ⊕ - y) from by
-    nth_rw 1 [←neg_neg x]
-    nth_rw 1 [← neg_neg y]
-    nth_rw 2 [← neg_neg y]
-    exact this
+    rw[neg_neg x] at this
+    rw[neg_neg y] at this
+    rw[neg_neg x]
+    apply this
   rw[not_sup' (-x) (-y)]
   rw[neg_neg]
 
@@ -305,7 +310,9 @@ instance : CanonicallyOrderedAdd A where
   exists_add_of_le := by
     intro x y
     rw[le_iff₄]
-    tauto
+    intro ⟨z,h⟩
+    use z
+    apply h.symm
   le_add_self := by
     intro x y
     rw[le_iff₄]
@@ -315,7 +322,7 @@ instance : CanonicallyOrderedAdd A where
     intro x y
     rw[le_iff₄]
     use y
-    tauto
+    rfl
 
 def isMVChain (A : Type*) [MVAlgebra A] : Prop := ∀ (x y : A), x ≤ y ∨ y ≤ x
 
@@ -351,7 +358,7 @@ theorem min_def (x y : A) [MVChain A] : x ⊓ y = if (x ≤ y) then x else y := 
           exfalso
           apply h₂ hq
         case h2 =>
-          tauto
+          intro h ; exact h
       calc x ⊓ y
       _ = y ⊓ x := by rw[inf_comm]
       _ = y ⊙ ((- y) ⊕ x) := rfl
