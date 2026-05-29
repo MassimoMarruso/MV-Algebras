@@ -5,7 +5,7 @@ import Mathlib.Data.Multiset.UnionInter
 import Mathlib.Data.SetLike.Basic
 import Mathlib.Order.RelClasses
 
-namespace MVIdeal
+open MVOrder
 
 /-- An ideal of an MVAlgebra is a subset that contains zero, is closed under addition,
 and is donward closed
@@ -24,6 +24,8 @@ class MVAlgebra_Ideal (A : Type*) [MVAlgebra A] where
   zero_mem : 0 ∈ carrier
   le_mem {x y : A} : x ∈ carrier → y ≤ x → y ∈ carrier
   oAdd_mem {x y : A} : x ∈ carrier → y ∈ carrier → (x ⊕ y) ∈ carrier
+
+namespace MVIdeal
 
 variable {A : outParam Type*} {S : semiOutParam Type*} {S' : Type*} [MVAlgebra A]
   [MVAlgebra_IdealClass S A]
@@ -467,7 +469,7 @@ theorem maximal_iff (J : MVAlgebra_Ideal A) : isMaximal J ↔
       have ⟨a,n,hle⟩ := hK 1
       replace ⟨a,haJ⟩ := a
       use n
-      replace hle : ((n • x) ⊕ a) = 1 := one_le' hle
+      replace hle : ((n • x) ⊕ a) = 1 := one_le hle
       replace hle : - (n • x) ≤ a := by
         apply le_iff₂.mpr
         rw[oMul_dual]
@@ -488,7 +490,7 @@ theorem maximal_iff (J : MVAlgebra_Ideal A) : isMaximal J ↔
         _ = K := by rfl
       apply hntop
       apply top_iff_mem_one.mpr
-      rw[←oAdd_canc (n • x)]
+      rw[←oAdd_not_self (n • x)]
       refine oAdd_mem ?_ h
       apply smul_mem hxJ
   case mpr =>
@@ -528,7 +530,7 @@ theorem maximal_iff (J : MVAlgebra_Ideal A) : isMaximal J ↔
         apply hy.right
       have ⟨n,h₃⟩ := (h y).mp hny
       replace h₃ := hle.subset h₃
-      rw[←oAdd_canc (n • y)]
+      rw[←oAdd_not_self (n • y)]
       refine oAdd_mem ?_ h₃
       apply smul_mem
       unfold K at hy

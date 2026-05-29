@@ -2,6 +2,7 @@ import MVAlgebras.Basic
 import MVAlgebras.NaturalOrder
 import MVAlgebras.Ideal
 
+@[ext]
 class MVAlgebraHom (A : Type*) (B : Type*) [MVAlgebra A] [MVAlgebra B] where
   toFun : A → B
   map_zero : toFun (0 : A) = (0 : B)
@@ -10,6 +11,7 @@ class MVAlgebraHom (A : Type*) (B : Type*) [MVAlgebra A] [MVAlgebra B] where
 
 infix:500 " →⊕ " => MVAlgebraHom
 
+@[ext]
 class MVAlgebraHomClass (F : Type*) (A : outParam Type*) (B : outParam Type*)
   [MVAlgebra A] [MVAlgebra B] extends FunLike F A B where
   map_zero (f : F) : f (0 : A) = (0 : B)
@@ -17,6 +19,22 @@ class MVAlgebraHomClass (F : Type*) (A : outParam Type*) (B : outParam Type*)
   map_oAdd (f : F) (x y : A) : f (x ⊕ y) = f x ⊕ f y
 
 variable {A B : Type*} {F S T : Type*} [MVAlgebra A] [MVAlgebra B] [MVAlgebraHomClass F A B]
+[MVAlgebra_IdealClass S A] [MVAlgebra_IdealClass T B]
+
+open MVIdeal MVOrder
+
+instance : CoeOut (MVAlgebraHom A B) (A → B) where
+  coe f := f.toFun
+
+instance : MVAlgebraHomClass (A →⊕ B) A B where
+  coe f := f.toFun
+  coe_injective' := by
+    intro f g h
+    ext1
+    apply h
+  map_zero f := f.map_zero
+  map_oAdd f := f.map_oAdd
+  map_not f := f.map_not
 
 @[simp]
 lemma map_not (f : F) {x : A} : - f x = f (- x) := MVAlgebraHomClass.map_not f x
@@ -42,6 +60,7 @@ instance : OneHomClass F A B where
     _ = - f 0 := by rw[map_not]
     _ = - 0 := by rw[map_zero]
 
+@[simp]
 lemma map_oNeg (f : F) {x y : A} : f (x ⊖ y) = f x ⊖ f y := by
   calc f (x ⊖ y)
   _ = f (x ⊙ (- y)) := by rfl
@@ -57,6 +76,7 @@ lemma monotone (f : F) : Monotone f := by
   _ = f 1 := by rw[h]
   _ = 1 := by simp
 
+@[simp]
 lemma map_sup (f : F) (x y : A) : f (x ⊔ y) = f x ⊔ f y := by
   calc f (x ⊔ y)
   _ = f ((x ⊖ y) ⊕ y) := by rfl
@@ -64,22 +84,13 @@ lemma map_sup (f : F) (x y : A) : f (x ⊔ y) = f x ⊔ f y := by
   _ = ((f x ⊖ f y) ⊕ f y) := by rw[map_oNeg]
   _ = f x ⊔ f y := by rfl
 
+@[simp]
 lemma map_inf (f : F) (x y : A) : f (x ⊓ y) = f x ⊓ f y := by
   calc f (x ⊓ y)
   _ = f (x ⊙ (- x ⊕ y)) := by rfl
   _ = f x ⊙ f (- x ⊕ y) := by rw[map_oMul]
   _ = f x ⊙ ((- f x) ⊕ f y) := by simp
   _ = f x ⊓ f y := by rfl
-
-instance : MVAlgebraHomClass (A →⊕ B) A B where
-  coe f := f.toFun
-  coe_injective' f g h := by
-    cases f
-    cases g
-    congr
-  map_zero f := f.map_zero
-  map_not f := f.map_not
-  map_oAdd f := f.map_oAdd
 
 instance (f : A →⊕ B) : AddMonoidHom A B where
   toFun := f.toFun
@@ -114,15 +125,15 @@ instance : LatticeHomClass F A B where
   map_sup := map_sup
 
 @[reducible]
-def comap (φ : F) (I : MVAlgebra_Ideal B) : MVAlgebra_Ideal A where
-  carrier := ⇑φ ⁻¹' ↑I
+def comap (f : F) (I : T) : MVAlgebra_Ideal A where
+  carrier := f ⁻¹' I
   zero_mem := by
     rw[Set.mem_preimage]
     rw[map_zero]
     apply zero_mem
   le_mem := by
     intro x y hx h_le
-    exact le_mem hx (monotone φ h_le)
+    exact le_mem hx (monotone f h_le)
   oAdd_mem := by
     intro x y
     rw[Set.mem_preimage,Set.mem_preimage,Set.mem_preimage]
@@ -170,7 +181,7 @@ lemma ker_bot_iff_injective (f : F) : Function.Injective f ↔ ker f = (⊥ : MV
       rw[map_oMul]
       rw[←map_not]
       rw[hf]
-      rw[oMul_canc]
+      rw[oMul_not_self]
     have hf₁ : (y ⊙ (- x)) = 0 := hf' hf
     have hf₂ : (x ⊙ (- y)) = 0 := hf' hf.symm
     calc x

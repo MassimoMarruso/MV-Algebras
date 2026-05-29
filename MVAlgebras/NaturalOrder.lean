@@ -7,8 +7,6 @@ import Mathlib.Order.Lattice
   This proof is from the first chapter of Mundici
   Later in the file it is proven to be a lattice -/
 
-namespace NaturalOrder
-
 variable {A : Type*} [MVAlgebra A]
 
 instance [MVAlgebra A] : LE A where
@@ -65,6 +63,10 @@ lemma le_iff₄ {x y : A} : x ≤ y ↔ ∃ (z : A), (x ⊕ z) = y := by
     _ = (- x ⊕ x) ⊕ z := by rw[oAdd_assoc]
     _ = 1 ⊕ z := by simp
     _ = 1 := by rw[one_oAdd]
+
+namespace MVOrder
+
+variable {A : Type*} [MVAlgebra A]
 
 instance {A : Type*} [MVAlgebra A] : PartialOrder A where
   le x y := x ≤ y
@@ -377,4 +379,4 @@ noncomputable instance [MVChain A] : LinearOrder A where
     _ = - (if y ≤ x then - x else - y) := by rw[←not_le]
     _ = if y ≤ x then - - x else - - y := by rw[]-/
 
-end NaturalOrder
+end MVOrder
