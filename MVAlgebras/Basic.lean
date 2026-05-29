@@ -1,6 +1,6 @@
 import Mathlib.Algebra.Group.Basic
 import Mathlib.Order.Defs.PartialOrder
-import Mathlib.Tactic
+import Mathlib.Tactic.Basic
 
 /- An MV Algebra is a commutative monoid with an involution ¬
   with the following further axioms
