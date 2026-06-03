@@ -1,4 +1,4 @@
-import MVAlgebras.Basic
+import MVAlgebras.Defs
 import Mathlib.Order.Lattice
 import Mathlib.Order.BoundedOrder.Basic
 import Mathlib.Algebra.Order.Monoid.Canonical.Defs
@@ -20,7 +20,7 @@ lemma le_iff₁ {x y : A} : x ≤ y ↔ ((- x) ⊕ y) = 1 := by
 lemma le_iff₂ {x y : A} : x ≤ y ↔ x ⊙ (- y) = 0 := by
   calc x ≤ y
   _ ↔ ((- x) ⊕ y) = 1 := by rw[le_iff₁]
-  _ ↔ - (x ⊙ (- y)) = 1 := by rw[oMul_dual',neg_neg y]
+  _ ↔ - (x ⊙ (- y)) = 1 := by rw[not_oMul,neg_neg y]
   _ ↔ - (x ⊙ (- y)) = - 0 := by rw[not_zero]
   _ ↔ (x ⊙ (-y)) = 0 := by rw[←not_iff_not' _ 0]
 
@@ -145,7 +145,7 @@ lemma le_oAdd (x y z : A) (h : x ≤ y) : (z ⊕ x) ≤ z ⊕ y := by
 
 lemma oMul_le (x y z : A) (h : x ≤ y) : x ⊙ z ≤ y ⊙ z := by
   suffices this : - (y ⊙ z) ≤ - (x ⊙ z) from by apply (not_le _ _).mpr ; exact this
-  suffices this : (- y ⊕ - z) ≤ - x ⊕ - z from by rw[oMul_dual',oMul_dual'] ; exact this
+  suffices this : (- y ⊕ - z) ≤ - x ⊕ - z from by rw[not_oMul,not_oMul] ; exact this
   suffices this : -y ≤ - x from oAdd_le _ _ _ this
   exact (not_le _ _).mp h
 
@@ -244,7 +244,7 @@ lemma not_inf (x y : A) : - (x ⊓ y) = (-x) ⊔ (-y) := by
 lemma oMul_le_le_not_oAdd (x y z : A) : x ⊙ y ≤ z ↔ x ≤ - y ⊕ z := by
   calc x ⊙ y ≤ z
   _ ↔ (- (x ⊙ y) ⊕ z) = 1 := by rw[le_iff₁]
-  _ ↔ ((- x ⊕ - y) ⊕ z) = 1 := by rw[oMul_dual']
+  _ ↔ ((- x ⊕ - y) ⊕ z) = 1 := by rw[not_oMul]
   _ ↔ (- x ⊕ (- y ⊕ z)) = 1 := by rw[oAdd_assoc]
   _ ↔ x ≤ - y ⊕ z := by rw[le_iff₁]
 
@@ -270,7 +270,7 @@ lemma oMul_sup_distrib (x y z : A) : x ⊙ (y ⊔ z) = (x ⊙ y) ⊔ (x ⊙ z) :
 lemma oAdd_inf_distrib (x y z : A) : (x ⊕ (y ⊓ z)) = (x ⊕ y) ⊓ (x ⊕ z) := by
   rw[not_iff_not']
   rw[not_inf]
-  rw[oAdd_dual']
+  rw[not_oAdd]
   rw[not_inf]
   rw[oAdd_dual,oAdd_dual]
   rw[neg_neg,neg_neg]

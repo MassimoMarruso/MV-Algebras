@@ -1,6 +1,6 @@
-import MVAlgebras.Basic
+import MVAlgebras.Defs
 import MVAlgebras.NaturalOrder
-import MVAlgebras.Ideal
+import MVAlgebras.Ideal.Defs
 import Mathlib.Order.Hom.Lattice
 
 @[ext]
