@@ -71,7 +71,7 @@ lemma map_oNeg (f : F) {x y : A} : f (x ⊖ y) = f x ⊖ f y := by
 
 lemma monotone (f : F) : Monotone f := by
   intro x y h
-  rw[le_iff₁]
+  rw[le_iff_not_oAdd]
   calc - f x ⊕ f y
   _ = f (- x ⊕ y) := by simp
   _ = f 1 := by rw[h]
@@ -150,7 +150,7 @@ lemma mem_comap {f : F} {I : T} {x : A} : x ∈ comap f I ↔ f x ∈ I := by
 
 lemma le_iff_oNeg (h : F) {x y : A} : h x ≤ h y ↔ x ⊖ y ∈ ker h := by
   calc h x ≤ h y
-  _ ↔ (h x ⊖ h y) = 0 := by rw[le_iff₂,oNeg_def]
+  _ ↔ (h x ⊖ h y) = 0 := by rw[le_iff_oMul_not,oNeg_def]
   _ ↔ h (x ⊖ y) = 0 := by rw[map_oNeg]
   _ ↔ h (x ⊖ y) ∈ (⊥ : MVAlgebra_Ideal B) := by rw[mem_bot_iff_zero]
   _ ↔ x ⊖ y ∈ comap h (⊥ : MVAlgebra_Ideal B) := by rw[mem_comap]

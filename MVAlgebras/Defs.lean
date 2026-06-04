@@ -12,8 +12,6 @@ class MVAlgebra (A : Type*) extends InvolutiveNeg A, AddCommMonoid A where
   oAdd_not_zero (x : A) : (x + (- (0 : A))) = - (0 : A)
   not_switch (x y : A) : ((- ((- x) + y)) + y) = (- ((- y) + x)) + x
 
-/- te "OAdd" class simply gives the ⊕ notation -/
-
 /-- The class for the ⊕ notation. No axioms are given -/
 class OAdd (A : Type*) where
   oAdd : A → A → A
@@ -91,8 +89,8 @@ lemma oNeg_def' (x y : A) : x ⊖ y = - (- x ⊕ y) := by
   rw[oNeg_def,oMul_dual,neg_neg]
 
 @[simp]
-lemma not_switch' (x y : A) :
-  ((x ⊖ y) ⊕ y) = ( y ⊖ x) ⊕ x := by
+lemma oNeg_switch (x y : A) :
+  ((x ⊖ y) ⊕ y) = (y ⊖ x) ⊕ x := by
   rw[oNeg_def',oNeg_def']
   apply not_switch
 

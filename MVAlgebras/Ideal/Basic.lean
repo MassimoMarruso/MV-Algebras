@@ -54,7 +54,7 @@ theorem maximal_iff (J : MVAlgebra_Ideal A) : isMaximal J ↔
       use n
       replace hle : ((n • x) ⊕ a) = 1 := MVOrder.one_le hle
       replace hle : - (n • x) ≤ a := by
-        apply le_iff₂.mpr
+        apply le_iff_oMul_not.mpr
         rw[oMul_dual]
         rw[neg_neg,neg_neg]
         rw[not_iff_not']
