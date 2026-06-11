@@ -128,18 +128,18 @@ instance : LatticeHomClass F A B where
 @[reducible]
 def comap (f : F) (I : T) : MVAlgebra_Ideal A where
   carrier := f ⁻¹' I
-  zero_mem := by
+  zero_mem' := by
     rw[Set.mem_preimage]
     rw[map_zero]
     apply zero_mem
   le_mem := by
     intro x y hx h_le
     exact le_mem hx (monotone f h_le)
-  oAdd_mem := by
+  add_mem' := by
     intro x y
     rw[Set.mem_preimage,Set.mem_preimage,Set.mem_preimage]
     intro hx hy
-    rw[map_oAdd]
+    rw[map_add]
     exact oAdd_mem hx hy
 
 @[reducible]
@@ -148,7 +148,7 @@ def ker (f : F) : MVAlgebra_Ideal A := comap f (⊥ : MVAlgebra_Ideal B)
 lemma mem_comap {f : F} {I : T} {x : A} : x ∈ comap f I ↔ f x ∈ I := by
   tauto
 
-lemma le_iff_oNeg (h : F) {x y : A} : h x ≤ h y ↔ x ⊖ y ∈ ker h := by
+lemma le_iff_oNeg_ker (h : F) {x y : A} : h x ≤ h y ↔ x ⊖ y ∈ ker h := by
   calc h x ≤ h y
   _ ↔ (h x ⊖ h y) = 0 := by rw[le_iff_oMul_not,oNeg_def]
   _ ↔ h (x ⊖ y) = 0 := by rw[map_oNeg]

@@ -128,7 +128,7 @@ lemma oAdd_not_self (x : A) : (x ⊕ - x) = 1 := by
 @[simp]
 lemma not_self_oAdd (x : A) : (- x ⊕ x) = 1 := by
   rw[oAdd_comm]
-  exact oAdd_not_self x
+  apply oAdd_not_self
 
 @[simp]
 lemma not_oAdd {x y : A} : - (x ⊕ y) = (- x) ⊙ (- y) := by
@@ -142,11 +142,24 @@ lemma not_oMul {x y : A} : - (x ⊙ y) = - x ⊕ - y := by
   _ = - ((- - x) ⊙ (- - y)) := by rw[neg_neg,neg_neg]
   _ = - x ⊕ - y := by rw[oAdd_dual]
 
+@[simp]
+lemma not_not_oAdd {x y : A} : x ⊖ y = - (-x ⊕ y) := by
+  calc x ⊖ y
+  _ = x ⊙ (- y) := by rw[oNeg_def]
+  _ = - (- x ⊕ - - y) := by rw[oMul_dual]
+  _ = - (- x ⊕ y) := by rw[neg_neg]
+
 lemma oNeg_oAdd {x y : A} : ((x ⊖ y) ⊕ y) = (y ⊖ x) ⊕ x := by
   calc (x ⊖ y) ⊕ y
-  _ = - (- x ⊕ y) ⊕ y := by simp
+  _ = - (- x ⊕ y) ⊕ y := by rw[not_not_oAdd]
   _ = - (- y ⊕ x) ⊕ x := by rw[not_switch]
-  _ = (y ⊖ x) ⊕ x := by simp
+  _ = (y ⊖ x) ⊕ x := by rw[not_not_oAdd]
+
+lemma oAdd_oNeg {x y : A} : (y ⊕ (x ⊖ y)) = x ⊕ (y ⊖ x) := by
+  calc (y ⊕ (x ⊖ y))
+  _ = (x ⊖ y) ⊕ y := by rw[oAdd_comm]
+  _ = (y ⊖ x) ⊕ x := by rw[oNeg_oAdd]
+  _ = x ⊕ (y ⊖ x) := by rw[oAdd_comm]
 
 --we now add an instance of CommMonoid, now with ⊙ being the operation
 

@@ -24,32 +24,30 @@ lemma le_iff_oMul_not {x y : A} : x ≤ y ↔ x ⊙ (- y) = 0 := by
   _ ↔ - (x ⊙ (- y)) = - 0 := by rw[not_zero]
   _ ↔ (x ⊙ (-y)) = 0 := by rw[←not_iff_not' _ 0]
 
+lemma le_iff_oNeg {x y : A} : x ≤ y ↔ x ⊖ y = 0 := by
+  rw[oNeg_def]
+  apply le_iff_oMul_not
+
 lemma le_iff_oAdd_oNeg {x y : A} : x ≤ y ↔ y = (x ⊕ (y ⊖ x)) := by
   apply Iff.intro
   case mp =>
     intro h
     calc y
     _ = 0 ⊕ y := by rw[zero_oAdd]
-    _ = ((x ⊙ (- y)) ⊕ y) := by rw[le_iff_oMul_not.mp h]
-    _ = - (- x ⊕ y) ⊕ y := by simp
-    _ = - (- y ⊕ x) ⊕ x := by rw[not_switch]
-    _ = x ⊕ - (- y ⊕ x) := by rw[oAdd_comm]
+    _ = ((x ⊖ y) ⊕ y) := by rw[le_iff_oNeg.mp h]
+    _ = ((y ⊖ x) ⊕ x) := by rw[oNeg_switch]
     _ = x ⊕ (y ⊖ x) := by simp
   case mpr =>
     intro h
-    apply le_iff_oMul_not.mpr
-    calc x ⊙ (- y)
-    _ = - (- x ⊕ y) := by simp
-    _ = - (- x ⊕ (x ⊕ y ⊖ x)) := by rw[←h]
-    _ = - (- x ⊕ (y ⊖ x ⊕ x)) := by rw[oAdd_comm x]
-    _ = - ((y ⊖ x ⊕ x) ⊕ - x) := by rw[oAdd_comm (-x)]
-    _ = - (((x ⊖ y) ⊕ y) ⊕ - x) := by rw[oNeg_oAdd]
-    _ = - ((x ⊖ y) ⊕ (y ⊕ - x)) := by rw[oAdd_assoc]
-    _ = - ((x ⊖ y) ⊕ (- x ⊕ y)) := by rw[oAdd_comm (- x)]
-    _ = - ((x ⊖ y) ⊕ - - (- x ⊕ y)) := by rw[neg_neg]
-    _ = - ((x ⊖ y) ⊕ - (x ⊖ y)) := by rw[oNeg_def']
-    _ = - (1 : A) := by rw[oAdd_not_self (x ⊖ y)]
-    _ = 0 := by simp
+    apply le_iff_oNeg.mpr
+    calc x ⊖ y
+    _ = x ⊖ (x ⊕ y ⊖ x) := by rw[←h]
+    _ = x ⊖ (y ⊕ x ⊖ y) := by rw[oAdd_oNeg]
+    _ = x ⊙ (- (y ⊕ x ⊖ y)) := by rw[oNeg_def]
+    _ = x ⊙ ((- y) ⊙ (- (x ⊖ y))) := by rw[not_oAdd]
+    _ = (x ⊙ (- y)) ⊙ (- (x ⊖ y)) := by rw[oMul_assoc]
+    _ = (x ⊖ y) ⊙ (- (x ⊖ y)) := by rw[oNeg_def]
+    _ = 0 := by rw[oMul_not_self]
 
 --le_iff_exists
 
@@ -57,15 +55,16 @@ lemma le_iff_exists {x y : A} : x ≤ y ↔ ∃ (z : A), (x ⊕ z) = y := by
   apply Iff.intro
   case mp =>
     intro h
+    rw[le_iff_oAdd_oNeg] at h
     use y ⊖ x
-    apply (le_iff_oAdd_oNeg.mp h).symm
+    apply h.symm
   case mpr =>
     intro ⟨z,h⟩
-    apply le_iff_not_oAdd.mpr
+    rw[le_iff_not_oAdd]
     calc -x ⊕ y
     _ = - x ⊕ (x ⊕ z) := by rw[←h]
     _ = (- x ⊕ x) ⊕ z := by rw[oAdd_assoc]
-    _ = 1 ⊕ z := by simp
+    _ = 1 ⊕ z := by rw[oAdd_comm (- x) x,oAdd_not_self]
     _ = 1 := by rw[one_oAdd]
 
 namespace MVOrder
@@ -100,38 +99,44 @@ lemma not_iff (a : A) (x : A) : -a = x ↔ (a ⊕ x) = 1 ∧ a ⊙ x = 0 := by
   apply Iff.intro
   case mpr =>
     intro ⟨h₁,h₂⟩
-    replace h₁ : (- - a ⊕ x) = 1 := by
+    replace h₁ : -a ≤ x := by
+      rw[le_iff_not_oAdd]
       rw[neg_neg]
       exact h₁
-    replace h₁ : -a ≤ x := le_iff_not_oAdd.mpr h₁
-    have h₂ : x ⊙ (- - a) = 0 := by
+    replace h₂ : x ≤ -a := by
+      rw[le_iff_oMul_not]
       rw[neg_neg]
       rw[oMul_comm]
       exact h₂
-    replace h₂ : x ≤ -a := le_iff_oMul_not.mpr h₂
     exact le_antisymm h₁ h₂
   case mp =>
     intro h
     subst_eqs
     exact ⟨oAdd_not_self a,oMul_not_self a⟩
 
-lemma not_le (x y : A) : x ≤ y ↔ - y ≤ - x := by
-  calc x ≤ y
-  _ ↔ (-x ⊕ y) = 1 := by rw[le_iff_not_oAdd]
-  _ ↔ - (x ⊙ (- y)) = 1 := by rw[oAdd_dual,neg_neg]
-  _ ↔ (x ⊙ (- y)) = - 1 := by rw[not_iff_not',neg_neg]
-  _ ↔ x ⊙ (- y) = 0 := by rw[not_one]
-  _ ↔ (- y) ⊙ (- - x) = 0 := by rw[oMul_comm,neg_neg]
-  _ ↔ - y ≤ - x := by rw[le_iff_oMul_not]
-
 lemma antitone_not : Antitone (fun (x : A) => - x) := by
   intro x y hle
   suffices this : - y ≤ - x from by apply this
-  rw[←not_le]
-  apply hle
+  rw[le_iff_not_oAdd]
+  rw[le_iff_not_oAdd] at hle
+  calc - - y ⊕ - x
+  _ = y ⊕ - x := by rw[neg_neg]
+  _ = - x ⊕ y := by rw[oAdd_comm]
+  _ = 1 := by rw[hle]
+
+lemma not_le (x y : A) : x ≤ y ↔ - y ≤ - x := by
+  apply Iff.intro
+  case mp =>
+    apply antitone_not
+  case mpr =>
+    intro h
+    suffices this : - - x ≤ - - y from by
+      rw[neg_neg,neg_neg] at this
+      exact this
+    apply antitone_not h
 
 lemma oAdd_le (x y z : A) (h : x ≤ y) : (x ⊕ z) ≤ y ⊕ z := by
-  apply le_iff_exists.mpr
+  rw[le_iff_exists]
   replace ⟨w,h⟩ := le_iff_exists.mp h
   use w
   calc ((x ⊕ z) ⊕ w)
@@ -143,83 +148,86 @@ lemma oAdd_le (x y z : A) (h : x ≤ y) : (x ⊕ z) ≤ y ⊕ z := by
 lemma le_oAdd (x y z : A) (h : x ≤ y) : (z ⊕ x) ≤ z ⊕ y := by
   rw[oAdd_comm z x]
   rw[oAdd_comm z y]
-  exact oAdd_le x y z h
+  apply oAdd_le
+  apply h
 
 lemma oMul_le (x y z : A) (h : x ≤ y) : x ⊙ z ≤ y ⊙ z := by
-  suffices this : - (y ⊙ z) ≤ - (x ⊙ z) from by apply (not_le _ _).mpr ; exact this
-  suffices this : (- y ⊕ - z) ≤ - x ⊕ - z from by rw[not_oMul,not_oMul] ; exact this
-  suffices this : -y ≤ - x from oAdd_le _ _ _ this
-  exact (not_le _ _).mp h
+  rw[not_le]
+  rw[not_oMul,not_oMul]
+  apply oAdd_le
+  rw[←not_le]
+  apply h
 
 lemma le_oMul (x y z : A) (h : x ≤ y) : z ⊙ x ≤ z ⊙ y := by
-  suffices this : x ⊙ z ≤ y ⊙ z from by
-    rw[oMul_comm z x]
-    rw[oMul_comm z y]
-    apply this
-  exact oMul_le _ _ _ h
+  rw[oMul_comm z x]
+  rw[oMul_comm z y]
+  apply oMul_le
+  apply h
 
-lemma sup_le (x y z : A) (hx : x ≤ z) (hy : y ≤ z) : ((x ⊖ y) ⊕ y) ≤ z := by
-  replace hx := le_iff_not_oAdd.mp hx
-  replace hy := le_iff_oAdd_oNeg.mp hy
-  apply le_iff_not_oAdd.mpr
+instance : Max A where
+  max x y := (x ⊖ y) ⊕ y
+
+instance : Min A where
+  min x y := x ⊙ (- x ⊕ y)
+
+lemma sup_le (x y z : A) (hx : x ≤ z) (hy : y ≤ z) : x ⊔ y ≤ z := by
+  rw[le_iff_not_oAdd] at hx
+  rw[le_iff_oAdd_oNeg] at hy
+  rw[le_iff_not_oAdd]
   calc -(x ⊖ y ⊕ y) ⊕ z
-    _ = -((- - (x ⊖ y)) ⊕ y) ⊕ z := by rw[neg_neg]
-    _ = ((- (x ⊖ y)) ⊖ y) ⊕ z := by rw[oNeg_def' (- (x ⊖ y))]
+    _ = ((- x ⊖ y) ⊖ y) ⊕ z := by rw[not_oAdd,←oNeg_def]
     _ = ((- (x ⊖ y)) ⊖ y) ⊕ (y ⊕ (z ⊖ y)) := by rw[←hy]
     _ = ((- (x ⊖ y)) ⊖ y) ⊕ y ⊕ (z ⊖ y) := by rw[oAdd_assoc]
     _ = (y ⊖ (- (x ⊖ y))) ⊕ (- (x ⊖ y)) ⊕ (z ⊖ y) := by rw[oNeg_switch]
-    _ = (y ⊖ (- (x ⊖ y))) ⊕ - -(- x ⊕ y) ⊕ (z ⊖ y) := by rw[oNeg_def' x y]
-    _ = (y ⊖ (- (x ⊖ y))) ⊕ (- x ⊕ y) ⊕ (z ⊖ y) := by rw[neg_neg]
+    _ = (y ⊖ (- (x ⊖ y))) ⊕ (- x ⊕ y) ⊕ (z ⊖ y) := by rw[oNeg_def' x y, neg_neg]
     _ = (y ⊖ (- (x ⊖ y))) ⊕ (- x) ⊕ (y ⊕ (z ⊖ y)) := by rw[oAdd_assoc,oAdd_assoc,oAdd_assoc]
     _ = (y ⊖ (- (x ⊖ y))) ⊕ (- x) ⊕ z := by rw[←hy]
     _ = (y ⊖ (- (x ⊖ y))) ⊕ 1 := by rw[oAdd_assoc,hx]
     _ = 1 := by rw[oAdd_one]
 
-lemma not_sup' (y z : A) : ((-y) ⊖ (-z) ⊕ (- z)) = -(y ⊙ (-y ⊕ z)) := by
-    calc (-y) ⊖ (-z) ⊕ (- z)
-    _ = (-z) ⊖ (-y) ⊕ (-y) := by rw[oNeg_switch]
-    _ = (-z) ⊙ (- - y) ⊕ (- y) := by rw[oNeg_def]
-    _ = - (z ⊕ - y) ⊕ -y := by rw[oMul_dual,neg_neg,neg_neg]
-    _ = -y ⊕ - (- y ⊕ z) := by rw[oAdd_comm z,oAdd_comm]
-    _ = -(y ⊙ (-y ⊕ z)) := by rw[oMul_dual,neg_neg]
+lemma not_sup (x y : A) : (-x) ⊔ (- y) = -(x ⊓ y) := by
+    calc (-x) ⊖ (-y) ⊕ (- y)
+    _ = (-y) ⊖ (-x) ⊕ (-x) := by rw[oNeg_switch]
+    _ = (-y) ⊙ (- - x) ⊕ (- x) := by rw[oNeg_def]
+    _ = - (y ⊕ - x) ⊕ -x := by rw[oMul_dual,neg_neg,neg_neg]
+    _ = -x ⊕ - (- x ⊕ y) := by rw[oAdd_comm y,oAdd_comm]
+    _ = -(x ⊙ (-x ⊕ y)) := by rw[oMul_dual,neg_neg]
 
-instance : Lattice A where
-  sup x y := (x ⊖ y) ⊕ y
-  inf x y := x ⊙ (- x ⊕ y)
+instance : SemilatticeSup A where
+  sup := max
   le_sup_left := by
     intro x y
-    suffices this : x ≤ (y ⊖ x) ⊕ x from by rw[oNeg_switch] ; exact this
-    apply le_iff_exists.mpr
+    suffices this : x ≤ (x ⊖ y) ⊕ y from by apply this
+    rw[oNeg_switch]
+    rw[le_iff_exists]
     use y ⊖ x
-    exact oAdd_comm x _
+    apply oAdd_comm
   le_sup_right := by
     intro x y
-    apply le_iff_exists.mpr
+    rw[le_iff_exists]
     use x ⊖ y
-    exact oAdd_comm _ _
+    apply oAdd_comm
   sup_le := sup_le
+
+instance : Lattice A where
+  inf := min
   le_inf := by
     intro x y z hy hz
-    suffices this : - (y ⊙ (-y ⊕ z)) ≤ -x from by rw[not_le] ; exact this
-    replace hy : -y ≤ - x := (not_le _ _).mp hy
-    replace hz : -z ≤ - x := (not_le _ _).mp hz
-    suffices this : ((-y) ⊖ (-z) ⊕ (- z)) ≤ - x from by rw[←not_sup'] ; exact this
+    rw[not_le]
+    rw[not_le] at hy
+    rw[not_le] at hz
+    rw[←not_sup]
     exact sup_le _ _ _ hy hz
   inf_le_left := by
     intro x y
-    suffices h : - x ≤ - (x ⊙ (- x ⊕ y)) from by rw[not_le] ; exact h
-    suffices h : - x ≤ (-x) ⊖ (-y) ⊕ (-y) from by rw[←not_sup'] ; exact h
-    suffices h : - x ≤ (-y) ⊖ (-x) ⊕ (-x) from by rw[oNeg_switch] ; exact h
-    rw[le_iff_exists]
-    use (-y) ⊖ (-x)
-    rw[oAdd_comm]
+    rw[not_le]
+    rw[←not_sup]
+    apply le_sup_left
   inf_le_right := by
     intro x y
-    suffices h : - y ≤ - (x ⊙ (-x ⊕ y)) from by rw[not_le] ; exact h
-    suffices h : - y ≤ (-x) ⊖ (-y) ⊕ (- y) from by rw[←not_sup'] ; exact h
-    suffices h : - y ≤ - y ⊕ (-x) ⊖ (-y) from by rw[oAdd_comm] ; exact h
-    rw[le_iff_exists]
-    use (-x)⊖(-y)
+    rw[not_le]
+    rw[←not_sup]
+    apply le_sup_right
 
 @[simp]
 lemma inf_def (x y : A) : x ⊓ y = x ⊙ (- x ⊕ y) := rfl
@@ -228,20 +236,9 @@ lemma inf_def (x y : A) : x ⊓ y = x ⊙ (- x ⊕ y) := rfl
 lemma sup_def (x y : A) : x ⊔ y = (x ⊖ y) ⊕ y := rfl
 
 @[simp]
-lemma not_sup (x y : A) : - (x ⊔ y) = (-x) ⊓ (-y) := by
-  rw[inf_def,sup_def]
-  suffices this : - ((- - x) ⊖ (- - y) ⊕ - - y) = (-x) ⊙ (- - x ⊕ - y) from by
-    rw[neg_neg x] at this
-    rw[neg_neg y] at this
-    rw[neg_neg x]
-    apply this
-  rw[not_sup' (-x) (-y)]
-  rw[neg_neg]
-
-@[simp]
 lemma not_inf (x y : A) : - (x ⊓ y) = (-x) ⊔ (-y) := by
   rw[not_iff_not',neg_neg]
-  rw[not_sup,neg_neg,neg_neg]
+  rw[not_sup,neg_neg]
 
 lemma oMul_le_le_not_oAdd (x y z : A) : x ⊙ y ≤ z ↔ x ≤ - y ⊕ z := by
   calc x ⊙ y ≤ z
@@ -257,17 +254,20 @@ lemma oMul_sup_distrib (x y z : A) : x ⊙ (y ⊔ z) = (x ⊙ y) ⊔ (x ⊙ z) :
   have h₂ : (x ⊙ z) ≤ x ⊙ (y ⊔ z) := by
     apply le_oMul
     exact le_sup_right
-  have h_le := (@sup_le_iff A _ _ _ _).mpr ⟨h₁,h₂⟩
-  have le_h : x ⊙ (y ⊔ z) ≤ (x ⊙ y) ⊔ (x ⊙ z) := by
-    let t := (x ⊙ y) ⊔ (x ⊙ z)
-    have h₁' : x ⊙ y ≤ t := by unfold t ; apply le_sup_left
-    have h₂' : x ⊙ z ≤ t := by unfold t ; apply le_sup_right
-    replace h₁' : y ≤ (- x) ⊕ t := by rw[←oMul_le_le_not_oAdd,oMul_comm] ; exact h₁'
-    replace h₂' : z ≤ (- x) ⊕ t := by rw[←oMul_le_le_not_oAdd,oMul_comm] ; exact h₂'
-    have h' : y ⊔ z ≤ (- x) ⊕ t := sup_le y z ((- x) ⊕ t) h₁' h₂'
-    replace h' : x ⊙ (y ⊔ z) ≤ t := by rw[oMul_comm,oMul_le_le_not_oAdd] ; exact h'
-    apply h'
-  exact le_antisymm le_h h_le
+  have h_ge : x ⊙ (y ⊔ z) ≥ (x ⊙ y) ⊔ (x ⊙ z) := sup_le_iff.mpr ⟨h₁,h₂⟩
+  have h_le : x ⊙ (y ⊔ z) ≤ (x ⊙ y) ⊔ (x ⊙ z) := by
+    rw[oMul_comm x]
+    rw[oMul_le_le_not_oAdd]
+    have h₁' : y ≤ (- x) ⊕ ((x ⊙ y) ⊔ (x ⊙ z)) := by
+      rw[←oMul_le_le_not_oAdd]
+      rw[oMul_comm x y]
+      apply le_sup_left
+    have h₂' : z ≤ (- x) ⊕ ((x ⊙ y) ⊔ (x ⊙ z)) := by
+      rw[←oMul_le_le_not_oAdd]
+      rw[oMul_comm x z]
+      apply le_sup_right
+    apply sup_le _ _ _ h₁' h₂'
+  exact le_antisymm h_le h_ge
 
 lemma oAdd_inf_distrib (x y z : A) : (x ⊕ (y ⊓ z)) = (x ⊕ y) ⊓ (x ⊕ z) := by
   rw[not_iff_not']
@@ -279,23 +279,24 @@ lemma oAdd_inf_distrib (x y z : A) : (x ⊕ (y ⊓ z)) = (x ⊕ y) ⊓ (x ⊕ z)
   apply oMul_sup_distrib
 
 lemma le_zero {x : A} (h : x ≤ 0) : x = 0 := by
-  suffices this : 0 = x from by apply this.symm
-  calc 0
-  _ = x ⊙ (- 0) := by rw[le_iff_oMul_not.mp h]
-  _ = x ⊙ 1 := by simp
-  _ = x := by simp
+  rw[le_iff_oMul_not] at h
+  calc x
+  _ = x ⊙ 1 := by rw[oMul_one]
+  _ = x ⊙ (- 0) := by rw[not_zero]
+  _ = 0 := by rw[h]
 
 lemma zero_le (x : A) : 0 ≤ x := by
   rw[le_iff_exists]
   use x
-  simp
+  apply zero_oAdd
 
 lemma one_le {x : A} (h : 1 ≤ x) : x = 1 := by
+  rw[not_le] at h
   rw[not_iff_not']
   rw[not_one]
   apply le_zero
   rw[←not_one]
-  apply (not_le _ _).mp h
+  apply h
 
 lemma le_one (x : A) : x ≤ 1 := by
   rw[not_le]
