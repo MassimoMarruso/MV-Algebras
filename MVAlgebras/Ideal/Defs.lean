@@ -27,8 +27,6 @@ class MVAlgebra_IdealClass (S : Type*) (A : outParam Type*) [MVAlgebra A] extend
 class MVAlgebra_Ideal (A : Type*) [MVAlgebra A] extends AddSubmonoid A where
   le_mem {x y : A} : x ∈ carrier → y ≤ x → y ∈ carrier
 
-namespace MVIdeal
-
 variable {A : outParam Type*} {S : semiOutParam Type*} {S' : Type*} [MVAlgebra A]
   [MVAlgebra_IdealClass S A]
 
@@ -37,6 +35,8 @@ lemma le_mem {I : S} {x y : A} : x ∈ I → y ≤ x → y ∈ I := MVAlgebra_Id
 
 @[simp]
 lemma oAdd_mem {I : S} {x y : A} : x ∈ I → y ∈ I → (x ⊕ y) ∈ I := MVAlgebra_IdealClass.oAdd_mem'
+
+namespace MVIdeal
 
 instance : SetLike (MVAlgebra_Ideal A) A where
   coe := fun I => I.carrier
@@ -73,7 +73,8 @@ def iInter {I : Type*} (ι : I → S) : MVAlgebra_Ideal A where
     replace hx : ∀ (i : I), x ∈ (ι i) := by
       apply Set.mem_iInter.mp
       exact hx
-    exact le_mem (hx i) h_le
+    apply le_mem (hx i)
+    apply h_le
   add_mem' := by
     intro x y hx hy _ ⟨i,h⟩
     subst_eqs
@@ -83,7 +84,7 @@ def iInter {I : Type*} (ι : I → S) : MVAlgebra_Ideal A where
     replace hy : ∀ (i : I), y ∈ (ι i) := by
       apply Set.mem_iInter.mp
       exact hy
-    exact oAdd_mem (hx i) (hy i)
+    apply oAdd_mem (hx i) (hy i)
 
 @[implicit_reducible]
 instance : Inter (MVAlgebra_Ideal A) where
@@ -174,7 +175,7 @@ lemma sum_mem {I : S} {L : Multiset A} (h : ∀ (x : A), x ∈ L → x ∈ I) : 
   apply Multiset.sum_induction
   case p_add =>
     intro _ _
-    exact oAdd_mem
+    apply oAdd_mem
   case p_zero => apply zero_mem
   case p_s => exact h
 
