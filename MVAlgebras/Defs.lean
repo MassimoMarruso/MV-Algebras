@@ -110,7 +110,7 @@ lemma one_oAdd (x : A) : (1 ⊕ x) = 1 := by
   rw[oAdd_comm]
   exact oAdd_one x
 
-lemma oAdd_dual {x y : A} : (x ⊕ y) = - ((- x) ⊙ (- y)) := by
+lemma oAdd_dual (x y : A) : (x ⊕ y) = - ((- x) ⊙ (- y)) := by
   calc x ⊕ y
   _ = - - (x ⊕ y) := by rw[neg_neg]
   _ = - - (- - x ⊕ - - y) := by rw[neg_neg x,neg_neg y]
@@ -131,13 +131,13 @@ lemma not_self_oAdd (x : A) : (- x ⊕ x) = 1 := by
   apply oAdd_not_self
 
 @[simp]
-lemma not_oAdd {x y : A} : - (x ⊕ y) = (- x) ⊙ (- y) := by
+lemma not_oAdd (x y : A) : - (x ⊕ y) = (- x) ⊙ (- y) := by
   calc - (x ⊕ y)
   _ = - (- - x ⊕ - - y) := by rw[neg_neg,neg_neg]
   _ = (- x) ⊙ (- y) := by rw[oMul_dual]
 
 @[simp]
-lemma not_oMul {x y : A} : - (x ⊙ y) = - x ⊕ - y := by
+lemma not_oMul (x y : A) : - (x ⊙ y) = - x ⊕ - y := by
   calc - (x ⊙ y)
   _ = - ((- - x) ⊙ (- - y)) := by rw[neg_neg,neg_neg]
   _ = - x ⊕ - y := by rw[oAdd_dual]
@@ -201,6 +201,18 @@ lemma oMul_one (x : A) : x ⊙ 1 = x := by
   rw[oMul_comm]
   rw[one_oMul]
 
+@[simp]
+lemma oMul_zero (x : A) : (x ⊙ 0) = 0 := by
+  rw[not_iff_not']
+  rw[not_oMul]
+  rw[←not_zero]
+  rw[oAdd_one]
+
+@[simp]
+lemma zero_oMul (x : A) : (0 ⊙ x) = 0 := by
+  rw[oMul_comm]
+  apply oMul_zero
+
 instance (A : Type*) [MVAlgebra A] : CommMonoid A where
   mul := (· ⊙ ·)
   mul_assoc := oMul_assoc
@@ -210,3 +222,20 @@ instance (A : Type*) [MVAlgebra A] : CommMonoid A where
   mul_comm := oMul_comm
 
 def isTrivial (A : Type*) [MVAlgebra A] : Prop := ∀ (x : A), x = 0
+
+lemma not_oNeg_not (x y : A) : x ⊖ y = ((- y) ⊖ (- x)) := by
+  calc x ⊖ y
+  _ = - ((-x) ⊕ y) := by rw[oNeg_def']
+  _ = - (y ⊕ (-x)) := by rw[oAdd_comm y]
+  _ = - ((- - y) ⊕ (-x)) := by rw[neg_neg]
+  _ = ((- y) ⊖ (- x)) := by rw[←oNeg_def']
+
+lemma not_oNeg (x y : A) : (- x) ⊖ y = - (x ⊕ y) := by
+  calc (- x) ⊖ y
+  _ = (- x) ⊙ (- y) := by rw[oNeg_def]
+  _ = - ((- - x) ⊕ (- - y)) := by rw[oMul_dual]
+  _ = - (x ⊕ y) := by rw[neg_neg,neg_neg]
+
+lemma not_oNeg' (x y : A) : - (x ⊖ y) = ((- x) ⊕ y) := by
+  rw[oNeg_def']
+  rw[neg_neg]
