@@ -85,7 +85,56 @@ lemma dist_triangle (x y z : A) : dist x z ≤ dist x y ⊕ dist y z := by
   _ = (((x ⊖ y) ⊕ (y ⊖ x)) ⊕ (y ⊖ z)) ⊕ (z ⊖ y) := by rw[←oAdd_assoc (x ⊖ y)]
   _ = ((x ⊖ y) ⊕ (y ⊖ x)) ⊕ ((y ⊖ z) ⊕ (z ⊖ y)) := by rw[oAdd_assoc]
 
+lemma not_dist (x y : A) : dist x y = dist (-x) (-y) := by
+  unfold dist
+  rw[←not_oNeg_not,←not_oNeg_not]
+  rw[oAdd_comm]
 
-
+lemma oAdd_dist (x y s t : A) : dist (x ⊕ s) (y ⊕ t) ≤ dist x y ⊕ dist s t := by
+  have h (x y s t : A) : ((- (x ⊕ s) ⊖ (y ⊕ t) ) ⊕ ((x ⊖ y) ⊕ (s ⊖ t))) =
+    (-(x ⊕ s)) ⊕ ((x ⊔ y) ⊕ (t ⊔ s)) := by
+    calc ((- (x ⊕ s) ⊖ (y ⊕ t) ) ⊕ ((x ⊖ y) ⊕ (s ⊖ t)))
+    _ = ((- (x ⊕ s)) ⊕ (y ⊕ t) ) ⊕ ((x ⊖ y) ⊕ (s ⊖ t)) := by rw[not_oNeg']
+    _ = (- (x ⊕ s)) ⊕ ((y ⊕ t)  ⊕ ((x ⊖ y) ⊕ (s ⊖ t))) := by rw[oAdd_assoc]
+    _ = (- (x ⊕ s)) ⊕ (((y ⊕ t) ⊕ (x ⊖ y)) ⊕ (s ⊖ t)) := by rw[oAdd_assoc (y ⊕ t)]
+    _ = (- (x ⊕ s)) ⊕ ((y ⊕ (t ⊕ (x ⊖ y))) ⊕ (s ⊖ t)) := by rw[oAdd_assoc y]
+    _ = (- (x ⊕ s)) ⊕ ((y ⊕ ((x ⊖ y) ⊕ t)) ⊕ (s ⊖ t)) := by rw[oAdd_comm t]
+    _ = (- (x ⊕ s)) ⊕ (((y ⊕ (x ⊖ y)) ⊕ t) ⊕ (s ⊖ t)) := by rw[←oAdd_assoc y]
+    _ = (- (x ⊕ s)) ⊕ ((y ⊕ (x ⊖ y)) ⊕ (t ⊕ (s ⊖ t))) := by rw[oAdd_assoc]
+    _ = (- (x ⊕ s)) ⊕ (((x ⊖ y) ⊕ y) ⊕ ((s ⊖ t) ⊕ t)) := by rw[oAdd_comm y,oAdd_comm t]
+    _ = (- (x ⊕ s)) ⊕ ((x ⊔ y) ⊕ (s ⊔ t)) := rfl
+    _ = (- (x ⊕ s)) ⊕ ((x ⊔ y) ⊕ (t ⊔ s)) := by rw[sup_comm s]
+  have h (x y s t : A) : ((- (x ⊕ s) ⊖ (y ⊕ t) ) ⊕ ((x ⊖ y) ⊕ (s ⊖ t))) = 1 := by
+    rw[h]
+    apply MVOrder.one_le
+    calc 1
+    _ = (x ⊕ s) ⊕ (- (x ⊕ s)) := by rw[oAdd_not_self]
+    _ = (- (x ⊕ s)) ⊕ (x ⊕ s) := by rw[oAdd_comm]
+    _ ≤ (-(x ⊕ s)) ⊕ (x ⊕ (t ⊔ s)) := by
+      apply MVOrder.le_oAdd
+      apply MVOrder.le_oAdd
+      apply le_sup_right
+    _ ≤ (-(x ⊕ s)) ⊕ ((x ⊔ y) ⊕ (t ⊔ s)) := by
+      apply MVOrder.le_oAdd
+      apply MVOrder.oAdd_le
+      apply le_sup_left
+  replace h (x y s t : A) : (x ⊕ s) ⊖ (y ⊕ t) ≤ (x ⊖ y) ⊕ (s ⊖ t) := by
+    rw[le_iff_not_oAdd]
+    apply h
+  replace h :
+    ((x + s) ⊖ (y + t)) + ((y ⊕ t) ⊖ (x ⊕ s)) ≤ x ⊖ y ⊕ y ⊖ x ⊕ (s ⊖ t ⊕ t ⊖ s) := by
+    calc (x ⊕ s) ⊖ (y ⊕ t) ⊕ (y ⊕ t) ⊖ (x ⊕ s)
+    _ ≤ (x ⊖ y) ⊕ (s ⊖ t) ⊕ (y ⊕ t) ⊖ (x ⊕ s) := by
+      apply MVOrder.oAdd_le ; apply h
+    _ = (x ⊖ y) ⊕ (s ⊖ t) ⊕ ((y ⊕ t) ⊖ (x ⊕ s)) := by rw[oAdd_assoc]
+    _ ≤ (x ⊖ y) ⊕ (s ⊖ t) ⊕ ((y ⊖ x) ⊕ (t ⊖ s)) := by
+      apply MVOrder.le_oAdd ; apply h
+    _ = (x ⊖ y) ⊕ ((s ⊖ t) ⊕ ((y ⊖ x) ⊕ (t ⊖ s))) := by rw[oAdd_assoc]
+    _ = (x ⊖ y) ⊕ (((s ⊖ t) ⊕ (y ⊖ x)) ⊕ (t ⊖ s)) := by rw[oAdd_assoc]
+    _ = (x ⊖ y) ⊕ (((y ⊖ x) ⊕ (s ⊖ t)) ⊕ (t ⊖ s)) := by rw[oAdd_comm (y ⊖ x)]
+    _ = (x ⊖ y) ⊕ ((y ⊖ x) ⊕ ((s ⊖ t) ⊕ (t ⊖ s))) := by rw[oAdd_assoc]
+    _ = x ⊖ y ⊕ y ⊖ x ⊕ (s ⊖ t ⊕ t ⊖ s) := by rw[oAdd_assoc]
+  unfold dist
+  apply h
 
 end MVDist
