@@ -134,6 +134,7 @@ def comap (f : F) (I : T) : MVAlgebra_Ideal A where
     apply zero_mem
   le_mem := by
     intro x y hx h_le
+    replace hx : f x ∈ I := by apply hx
     exact le_mem hx (monotone f h_le)
   add_mem' := by
     intro x y
