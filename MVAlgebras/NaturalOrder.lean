@@ -11,7 +11,7 @@ import Mathlib.Algebra.Order.Monoid.Canonical.Defs
 
 variable {A : Type*} [MVAlgebra A]
 
-instance : LE A where
+instance orderOfMVAlgebras : LE A where
   le x y := ((- x) ⊕ y) = 1
 
 lemma le_iff_not_oAdd {x y : A} : x ≤ y ↔ ((- x) ⊕ y) = 1 := by
@@ -48,8 +48,6 @@ lemma le_iff_oAdd_oNeg {x y : A} : x ≤ y ↔ y = (x ⊕ (y ⊖ x)) := by
     _ = (x ⊙ (- y)) ⊙ (- (x ⊖ y)) := by rw[oMul_assoc]
     _ = (x ⊖ y) ⊙ (- (x ⊖ y)) := by rw[oNeg_def]
     _ = 0 := by rw[oMul_not_self]
-
---le_iff_exists
 
 lemma le_iff_exists {x y : A} : x ≤ y ↔ ∃ (z : A), (x ⊕ z) = y := by
   apply Iff.intro
@@ -163,6 +161,30 @@ lemma le_oMul (x y z : A) (h : x ≤ y) : z ⊙ x ≤ z ⊙ y := by
   rw[oMul_comm z y]
   apply oMul_le
   apply h
+
+lemma ge_iff_exists (x y : A) : y ≤ x ↔ ∃ (z : A), (x ⊙ z) = y := by
+  apply Iff.intro
+  case mp =>
+    intro h
+    rw[not_le] at h
+    rw[le_iff_exists] at h
+    replace ⟨z,h⟩ := h
+    use (- z)
+    calc x ⊙ (-z)
+    _ = - - (x ⊙ (- z)) := by rw[neg_neg]
+    _ = - ((-x) ⊕ (- - z)) := by rw[not_oMul]
+    _ = - ((-x) ⊕ z) := by rw[neg_neg]
+    _ = - - y := by rw[h]
+    _ = y := by rw[neg_neg]
+  case mpr =>
+    intro ⟨z,h⟩
+    rw[le_iff_oMul_not]
+    calc y ⊙ (-x)
+    _ = (x ⊙ z) ⊙ (-x) := by rw[h]
+    _ = (-x) ⊙ (x ⊙ z) := by rw[oMul_comm]
+    _ = ((-x) ⊙ x) ⊙ z := by rw[oMul_assoc]
+    _ = 0 ⊙ z := by rw[oMul_comm (-x) x, oMul_not_self]
+    _ = 0 := by rw[zero_oMul]
 
 instance : Max A where
   max x y := (x ⊖ y) ⊕ y
@@ -343,7 +365,7 @@ theorem min_def (x y : A) [MVChain A] : x ⊓ y = if (x ≤ y) then x else y := 
       calc x ⊓ y
       _ = x ⊙ (- x ⊕ y) := rfl
       _ = x ⊙ (- ( - - x) ⊙ (- y)) := by simp
-      _ = x ⊙ (- (x) ⊙ (- y)) := by simp
+      _ = x ⊙ (- (x ⊙ (- y))) := by simp
       _ = x ⊙ (- 0) := by rw[le_iff_oMul_not.mp h₁]
       _ = x ⊙ 1 := by simp
       _ = x := by simp
@@ -390,3 +412,55 @@ noncomputable instance [MVChain A] : LinearOrder A where
     _ = if y ≤ x then - - x else - - y := by rw[]-/
 
 end MVOrder
+
+/-namespace MVGe
+
+instance : Mul Aᵒᵈ where
+  mul x y := x.ofDual * y.ofDual
+
+instance : CanonicallyOrderedMul Aᵒᵈ where
+  exists_mul_of_le := by
+    intro x y h
+    let xx := x.ofDual
+    let yy := y.ofDual
+    have hx : OrderDual.toDual xx = x := rfl
+    have hy : OrderDual.toDual yy = y := rfl
+    rw[←hx,←hy] at h
+    rw[OrderDual.le_toDual] at h
+    rw[MVOrder.ge_iff_exists] at h
+    replace ⟨z,h⟩ := h
+    use z
+    apply h.symm
+  le_self_mul := by
+    intro x y
+    let xx := x.ofDual
+    let yy := y.ofDual
+    have hx : OrderDual.toDual xx = x := rfl
+    have hy : OrderDual.toDual yy = y := rfl
+    rw[←hx,←hy]
+    have hh : OrderDual.toDual xx * OrderDual.toDual yy = OrderDual.toDual (xx * yy) := by rfl
+    rw[hh]
+    rw[OrderDual.le_toDual]
+    rw[OrderDual.ofDual_toDual]
+    rw[MVOrder.ge_iff_exists]
+    use yy
+    rfl
+  le_mul_self := by
+    intro x y
+    let xx := x.ofDual
+    let yy := y.ofDual
+    have hx : OrderDual.toDual xx = x := by rfl
+    have hy : OrderDual.toDual yy = y := by rfl
+    rw[←hx,←hy]
+    have hh : OrderDual.toDual yy * OrderDual.toDual xx = OrderDual.toDual (xx * yy) := by
+      calc OrderDual.toDual yy * OrderDual.toDual xx
+      _ = OrderDual.toDual (yy * xx) := rfl
+      _ = OrderDual.toDual (xx * yy) := by rw[mul_comm]
+    rw[hh]
+    rw[OrderDual.le_toDual]
+    rw[OrderDual.ofDual_toDual]
+    rw[MVOrder.ge_iff_exists]
+    use yy
+    rfl
+
+end MVGe-/
