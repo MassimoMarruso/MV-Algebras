@@ -1,11 +1,12 @@
 import MVAlgebras.Defs
 import MVAlgebras.NaturalOrder
+import MVAlgebras.MVAlgebraHom
 
 variable {A : Type*} [MVAlgebra A]
 
-namespace MVDist
-
 def dist {A : Type*} [MVAlgebra A] (x y : A) : A := (x ⊖ y) ⊕ (y ⊖ x)
+
+namespace MVDist
 
 lemma dist_self {x : A} : dist x x = 0 := by
   unfold dist
@@ -138,3 +139,11 @@ lemma oAdd_dist (x y s t : A) : dist (x ⊕ s) (y ⊕ t) ≤ dist x y ⊕ dist s
   apply h
 
 end MVDist
+
+lemma map_dist {A B : Type*} [MVAlgebra A] [MVAlgebra B] {f : A →⊕ B} {x y : A} :
+  f (dist x y) = dist (f x) (f y) := by
+  calc f (dist x y)
+  _ = f ((x ⊖ y) ⊕ (y ⊖ x)) := by rfl
+  _ = (f (x ⊖ y) ⊕ f (y ⊖ x)) := by rw[map_oAdd]
+  _ = ((f x ⊖ f y) ⊕ (f y ⊖ f x)) := by rw[map_oNeg,map_oNeg]
+  _ = dist (f x) (f y) := rfl

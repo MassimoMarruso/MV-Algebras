@@ -16,25 +16,26 @@ open MVOrder
 and is donward closed
 -/
 @[ext]
-class MVAlgebra_IdealClass (S : Type*) (A : outParam Type*) [MVAlgebra A] extends
-  (SetLike S A) where
-  zero_mem' (I : S) : (0 : A) ∈ I
+class MVAlgebra_IdealClass (S : Type*) (A : outParam Type*) [MVAlgebra A] [SetLike S A]
+  extends (AddSubmonoidClass S A) where
   le_mem' {I : S} {x y : A} : x ∈ I → y ≤ x → y ∈ I
-  oAdd_mem' {I : S} {x y : A} : x ∈ I → y ∈ I → (x ⊕ y) ∈ I
 
-/-A concrete ideal of an MVAlgebra A-/
+/-- An ideal of an MVAlgebra is a subset that contains zero, is closed under addition,
+and is donward closed
+-/
 @[ext]
 class MVAlgebra_Ideal (A : Type*) [MVAlgebra A] extends AddSubmonoid A where
   le_mem {x y : A} : x ∈ carrier → y ≤ x → y ∈ carrier
 
 variable {A : outParam Type*} {S : semiOutParam Type*} {S' : Type*} [MVAlgebra A]
-  [MVAlgebra_IdealClass S A]
+  [SetLike S A] [MVAlgebra_IdealClass S A]
 
 @[simp]
 lemma le_mem {I : S} {x y : A} : x ∈ I → y ≤ x → y ∈ I := MVAlgebra_IdealClass.le_mem'
 
 @[simp]
-lemma oAdd_mem {I : S} {x y : A} : x ∈ I → y ∈ I → (x ⊕ y) ∈ I := MVAlgebra_IdealClass.oAdd_mem'
+lemma oAdd_mem {I : S} {x y : A} : x ∈ I → y ∈ I → (x ⊕ y) ∈ I :=
+  MVAlgebra_IdealClass.toAddSubmonoidClass.add_mem
 
 namespace MVIdeal
 
@@ -46,16 +47,12 @@ instance : SetLike (MVAlgebra_Ideal A) A where
     apply h
 
 instance : MVAlgebra_IdealClass (MVAlgebra_Ideal A) A where
-  zero_mem' _ := MVAlgebra_Ideal.toAddSubmonoid.zero_mem
   le_mem' := MVAlgebra_Ideal.le_mem
-  oAdd_mem' := MVAlgebra_Ideal.toAddSubmonoid.add_mem
-
-instance : AddSubmonoidClass S A where
-  add_mem := oAdd_mem
-  zero_mem := MVAlgebra_IdealClass.zero_mem'
+  add_mem := MVAlgebra_Ideal.toAddSubmonoid.add_mem
+  zero_mem _ := MVAlgebra_Ideal.toAddSubmonoid.zero_mem
 
 @[simp]
-lemma carrier_coe (I : MVAlgebra_Ideal A) : I.carrier = (I : Set A) := rfl
+lemma carrier_eq_coe (I : MVAlgebra_Ideal A) : I.carrier = (I : Set A) := rfl
 
 /-- Indexed intersection of ideals
 -/
@@ -236,12 +233,12 @@ theorem closure_ofSubmonoid (W : Set A) :
     apply Iff.intro
     case mp =>
       intro ⟨L,hle,hin⟩
-      rw[carrier_coe]
+      rw[carrier_eq_coe]
       intro Y ⟨I,hI,hIY⟩
       rw[←hIY]
       rw[SetLike.mem_coe]
       refine I.le_mem ?_ hle
-      rw[carrier_coe]
+      rw[carrier_eq_coe]
       apply sum_mem
       intro y hy
       apply hI
@@ -249,8 +246,8 @@ theorem closure_ofSubmonoid (W : Set A) :
       apply hy
     case mpr =>
       intro hx
-      rw[carrier_coe,SetLike.mem_coe]
-      rw[carrier_coe,SetLike.mem_coe] at hx
+      rw[carrier_eq_coe,SetLike.mem_coe]
+      rw[carrier_eq_coe,SetLike.mem_coe] at hx
       apply hx
       use closure' W
       apply And.intro
@@ -268,7 +265,7 @@ lemma closure_eq (I : MVAlgebra_Ideal A) : closure I = I := by
   apply Iff.intro
   case mp =>
     intro h
-    rw[carrier_coe] at h
+    rw[carrier_eq_coe] at h
     rw[SetLike.mem_coe] at h
     replace h := h I
     apply h
@@ -279,7 +276,7 @@ lemma closure_eq (I : MVAlgebra_Ideal A) : closure I = I := by
       rw[Set.mem_setOf]
   case mpr =>
     intro hx
-    rw[carrier_coe]
+    rw[carrier_eq_coe]
     rw[SetLike.mem_coe]
     intro Y ⟨J,hJ,heq⟩
     rw[←heq]
