@@ -10,9 +10,6 @@ variable {A : Type*} [MVAlgebra A] {I : MVAlgebra_Ideal A}
 
 open MVDist
 
-def dist_in {A : Type*} [MVAlgebra A] (I : MVAlgebra_Ideal A) : A → A → Prop :=
-  fun (x y : A) => dist x y ∈ I
-
 instance equivOfDist : Equivalence (fun (x y : A) => dist x y ∈ I) where
   refl := by
     intro x

@@ -74,6 +74,29 @@ lemma monotone (f : F) : Monotone f := by
   _ = f 1 := by rw[h]
   _ = 1 := by simp
 
+lemma monotone_inv (f : F) {hs : Function.Surjective f} {hi : Function.Injective f} :
+  Monotone (Function.invFun f) := by
+  intro x y h
+  have ⟨x',hx⟩ := hs x
+  have ⟨y',hy⟩ := hs y
+  rw[←hx]
+  rw[←hy]
+  rw[le_iff_not_oAdd]
+  calc -(Function.invFun f) (f x') ⊕ (Function.invFun f) (f y')
+  _ = -(Function.invFun f ∘ f) x' ⊕ (Function.invFun f ∘ f) y' := rfl
+  _ = - id x' ⊕ id y' := by rw[Function.invFun_comp hi]
+  _ = - x' ⊕ y' := by rfl
+  _ = id (- x' ⊕ y') := by rfl
+  _ = (Function.invFun f ∘ f) (- x' ⊕ y') := by rw[Function.invFun_comp hi]
+  _ = Function.invFun f (f (- x' ⊕ y')) := by rfl
+  _ = Function.invFun f (- f x' ⊕ f y') := by rw[map_oAdd,map_not]
+  _ = Function.invFun f (- x ⊕ y) := by rw[hx,hy]
+  _ = Function.invFun f 1 := by rw[le_iff_not_oAdd.mp h]
+  _ = Function.invFun f (f 1) := by rw[map_one]
+  _ = (Function.invFun f ∘ f) 1 := by rfl
+  _ = id 1 := by rw[Function.invFun_comp hi]
+  _ = 1 := by rfl
+
 @[simp]
 lemma map_sup (f : F) (x y : A) : f (x ⊔ y) = f x ⊔ f y := by
   calc f (x ⊔ y)
@@ -123,6 +146,56 @@ def comap (f : F) (I : T) : MVAlgebra_Ideal A where
     intro hx hy
     rw[map_add]
     exact oAdd_mem hx hy
+
+@[reducible]
+def map (f : F) (I : S) {hs : Function.Surjective f} {hi : Function.Injective f} :
+  MVAlgebra_Ideal B where
+  carrier := f '' I
+  add_mem' := by
+    intro x y hx hy
+    rw[Set.mem_image]
+    rw[Set.mem_image] at hx
+    rw[Set.mem_image] at hy
+    replace ⟨x',hIx,hx⟩ := hx
+    replace ⟨y',hIy,hy⟩ := hy
+    use x' + y'
+    apply And.intro
+    case left =>
+      apply add_mem hIx hIy
+    case right =>
+      rw[map_add]
+      rw[hx]
+      rw[hy]
+  zero_mem' := by
+    rw[Set.mem_image]
+    use 0
+    apply And.intro
+    case left => apply zero_mem
+    case right => apply map_zero
+  le_mem := by
+    intro x y hx hle
+    rw[Set.mem_image]
+    rw[Set.mem_image] at hx
+    replace ⟨x',hIx,hx⟩ := hx
+    have ⟨y',hy⟩ := hs y
+    use y'
+    apply And.intro
+    case right => apply hy
+    case left =>
+      refine le_mem hIx ?_
+      calc y'
+      _ = id y' := by rfl
+      _ = (Function.invFun f ∘ f) y' := by rw[←Function.invFun_comp hi]
+      _ = Function.invFun f (f y') := by rfl
+      _ = Function.invFun f y := by rw[hy]
+      _ ≤ Function.invFun f x := by
+        apply monotone_inv f hle
+        ·apply hs
+        ·apply hi
+      _ = Function.invFun f (f x') := by rw[hx]
+      _ = (Function.invFun f ∘ f) x' := by rfl
+      _ = id x' := by rw[Function.invFun_comp hi]
+      _ = x' := rfl
 
 @[reducible]
 def ker (f : F) : MVAlgebra_Ideal A := comap f (⊥ : MVAlgebra_Ideal B)
@@ -208,5 +281,47 @@ def inverse {A B : Type*} [MVAlgebra A] [MVAlgebra B] (f : A →⊕ B) (g : B �
     _ = g (- f x') := by rw[map_not]
     _ = g (- x) := by rw[hx]
     _ = (f.inverse g hl hr) (- x) := by rw[AddMonoidHom.inverse_apply]
+
+theorem map_bot {A B : Type*} [MVAlgebra A] [MVAlgebra B] {f : A →⊕ B}
+  {hi : Function.Injective f} : f '' (⊥ : MVAlgebra_Ideal A) = (⊥ : MVAlgebra_Ideal B) := by
+  ext x
+  apply Iff.intro
+  case mp =>
+    intro h
+    rw[Set.mem_image] at h
+    have ⟨x',hI,hf⟩ := h
+    rw[←hf]
+    rw[SetLike.mem_coe]
+    rw[←mem_comap]
+    suffices this : x' ∈ ker f from by
+      apply this
+    rw[(ker_bot_iff_injective f).mp hi]
+    apply hI
+  case mpr =>
+    intro h
+    rw[SetLike.mem_coe] at h
+    rw[mem_bot_iff_zero] at h
+    rw[h]
+    rw[Set.mem_image]
+    use 0
+    apply And.intro
+    case left =>
+      rw[SetLike.mem_coe]
+      rw[mem_bot_iff_zero]
+    case right =>
+      apply map_zero
+
+@[implicit_reducible]
+def comp {A B C : Type*} [MVAlgebra A] [MVAlgebra B] [MVAlgebra C] (f : B →⊕ C)
+  (g : A →⊕ B) : A →⊕ C where
+  toAddMonoidHom := f.comp g
+  map_not := by
+    intro x
+    calc -(f.comp g).toFun x
+    _ = - (f ∘ g) x := rfl
+    _ = - (f (g x)) := rfl
+    _ = f (- g x) := by rw[map_not]
+    _ = f (g (- x)) := by rw[map_not]
+    _ = (f ∘ g) (-x) := rfl
 
 end MVHom

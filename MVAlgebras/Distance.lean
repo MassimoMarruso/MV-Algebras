@@ -138,6 +138,15 @@ lemma oAdd_dist (x y s t : A) : dist (x ⊕ s) (y ⊕ t) ≤ dist x y ⊕ dist s
   unfold dist
   apply h
 
+lemma dist_zero {A : Type*} [MVAlgebra A] {x : A} : dist x 0 = x := by
+  calc dist x 0
+  _ = (x ⊖ 0) ⊕ (0 ⊖ x) := rfl
+  _ = (x ⊙ (- 0)) ⊕ (0 ⊙ (- x)) := rfl
+  _ = (x ⊙ (- 0)) ⊕ 0 := by rw[zero_oMul]
+  _ = (x ⊙ (- 0)) := by rw[oAdd_zero]
+  _ = x ⊙ 1 := by rw[not_zero]
+  _ = x := by rw[oMul_one]
+
 end MVDist
 
 lemma map_dist {A B : Type*} [MVAlgebra A] [MVAlgebra B] {f : A →⊕ B} {x y : A} :
