@@ -6,3 +6,4 @@ import MVAlgebras.Ideal.Basic
 import MVAlgebras.Subalgebras
 import MVAlgebras.Distance
 import MVAlgebras.Quotient
+import MVAlgebras.SubdirectProduct
