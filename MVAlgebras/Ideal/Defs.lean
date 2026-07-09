@@ -284,14 +284,14 @@ lemma closure_eq (I : MVAlgebra_Ideal A) : closure I = I := by
     apply hx
 
 instance : PartialOrder (MVAlgebra_Ideal A) where
-  le I J := (I : Set A) ⊆ (J : Set A)
+  le I J := (I : Set A) ≤ (J : Set A)
   le_refl I := by rfl
   le_antisymm I J := by
     intro h₁ h₂
     apply SetLike.coe_injective'
     apply subset_antisymm h₁ h₂
   le_trans I J K := by
-    apply subset_trans
+    apply le_trans
 
 lemma closure_mono : Monotone (closure : Set A → MVAlgebra_Ideal A) := by
   intro I J hle x hx

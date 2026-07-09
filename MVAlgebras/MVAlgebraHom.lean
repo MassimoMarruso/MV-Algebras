@@ -256,31 +256,66 @@ lemma ker_bot_iff_injective (f : F) : Function.Injective f ↔ ker f = (⊥ : MV
 --theorem ker_prime_iff_MVChain (f : F) : isPrime (ker f) ↔ (¬ isTrivial B ∧ )
 
 class MVEquiv (A : Type*) (B : Type*) [MVAlgebra A] [MVAlgebra B] extends
-  AddEquiv A B, A →⊕ B
+  Equiv A B, A →⊕ B
 
-infix:77 "≃⊕" => MVEquiv
+infix:77 " ≃⊕ " => MVEquiv
+
+instance {A : Type*} {B : Type*} [MVAlgebra A] [MVAlgebra B] {f : A ≃⊕ B} : AddEquiv A B where
+  toEquiv := f.toEquiv
+  map_add' := f.map_add
+
+instance {A : Type*} {B : Type*} [MVAlgebra A] [MVAlgebra B] : FunLike (A ≃ B) A B where
+  coe f := f.toFun
+  coe_injective' := by
+    intro f g h
+    ext x
+    replace h : f.toFun = g.toFun := by
+      apply h
+    calc f x
+    _ = f.toFun x := rfl
+    _ = g.toFun x := by rw[h]
+    _ = g x := rfl
 
 namespace MVHom
 
 @[reducible]
-def inverse {A B : Type*} [MVAlgebra A] [MVAlgebra B] (f : A →⊕ B) (g : B → A)
-  (hl : Function.LeftInverse g f) (hr : Function.RightInverse g f) : B →⊕ A where
-  toAddMonoidHom := f.inverse g hl hr
+def symm {A B : Type*} [MVAlgebra A] [MVAlgebra B] (f : A ≃⊕ B)
+ : B ≃⊕ A where
+  invFun := f.toEquiv
+  toFun := f.symm
+  left_inv := by
+    intro x
+    rw[Equiv.apply_symm_apply]
+  right_inv := by
+    intro x
+    rw[Equiv.symm_apply_apply]
+  map_zero' := by
+    rw[←Equiv.apply_eq_iff_eq f.toEquiv]
+    rw[Equiv.apply_symm_apply]
+    symm
+    calc f.toEquiv 0
+    _ = f.toMVAlgebraHom 0 := rfl
+    _ = 0 := by rw[map_zero]
+  map_add' := by
+    intro x y
+    rw[←Equiv.apply_eq_iff_eq f.toEquiv]
+    rw[Equiv.apply_symm_apply]
+    symm
+    calc f.toEquiv (f.symm x + f.symm y)
+    _ = f.toMVAlgebraHom (f.symm x + f.symm y) := rfl
+    _ = f.toMVAlgebraHom (f.symm x ⊕ f.symm y) := rfl
+    _ = f.toMVAlgebraHom (f.symm x) ⊕ f.toMVAlgebraHom (f.symm y) := by rw[map_oAdd]
+    _ = f.toEquiv (f.symm x) ⊕ f.toEquiv (f.symm y) := rfl
+    _ = x ⊕ y := by rw[Equiv.apply_symm_apply,Equiv.apply_symm_apply]
   map_not := by
     intro x
-    have hs : Function.Surjective f := by
-      apply Function.LeftInverse.surjective
-      apply Function.RightInverse.leftInverse hr
-    have ⟨x',hx⟩ := hs x
-    calc - ((f.inverse g hl hr) x)
-    _ = - ((AddMonoidHom.inverse f g hl hr) x) := rfl
-    _ = - (g x) := by rw[AddMonoidHom.inverse_apply]
-    _ = - (g (f x')) := by rw[hx]
-    _ = - x' := by rw[hl]
-    _ = g (f (- x') ) := by rw[hl]
-    _ = g (- f x') := by rw[map_not]
-    _ = g (- x) := by rw[hx]
-    _ = (f.inverse g hl hr) (- x) := by rw[AddMonoidHom.inverse_apply]
+    rw[←Equiv.apply_eq_iff_eq f.toEquiv]
+    rw[Equiv.apply_symm_apply]
+    calc f.toEquiv (- (f.symm x))
+    _ = f.toMVAlgebraHom (- f.symm x) := rfl
+    _ = - f.toMVAlgebraHom (f.symm x) := by rw[←map_not]
+    _ = - f.toEquiv (f.symm x) := rfl
+    _ = - x := by rw[Equiv.apply_symm_apply]
 
 theorem map_bot {A B : Type*} [MVAlgebra A] [MVAlgebra B] {f : A →⊕ B}
   {hi : Function.Injective f} : f '' (⊥ : MVAlgebra_Ideal A) = (⊥ : MVAlgebra_Ideal B) := by

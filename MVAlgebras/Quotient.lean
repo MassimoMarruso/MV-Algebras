@@ -218,5 +218,35 @@ theorem lift_ker_injective {A B : Type*} [MVAlgebra A] [MVAlgebra B] (f : A →�
     rw[←h]
     apply MVDist.dist_self
 
-
 end QuotientMV
+
+@[reducible]
+noncomputable def fun_quot_ker {A B : Type*} [MVAlgebra A] [MVAlgebra B] (g : A →⊕ B)
+  {hg : Function.Surjective g} : (A ⧸ (ker g)) ≃⊕ B where
+  toMVAlgebraHom := by
+    refine QuotientMV.lift g ?_
+    rfl
+  invFun (x : B) := ⟦Function.surjInv hg x⟧
+  left_inv := by
+    apply Quotient.ind
+    intro x
+    calc ⟦Function.surjInv hg ((QuotientMV.lift g _) ⟦x⟧)⟧
+    _ = ⟦(Function.surjInv hg) (g x)⟧ := by rw[QuotientMV.lift_mk]
+    _ = ⟦x⟧ := by
+      rw[Quotient.eq]
+      suffices this : dist ((Function.surjInv hg) (g x)) x ∈ ker g from by
+        apply this
+      rw[mem_comap]
+      rw[MVIdeal.mem_bot_iff_zero]
+      rw[map_dist]
+      calc dist (g ((Function.surjInv hg) (g x))) (g x)
+      _ = dist ((g ∘ (Function.surjInv hg)) (g x)) (g x) := rfl
+      _ = dist (g x) (g x) := by rw[Function.comp_surjInv] ; rfl
+      _ = 0 := by rw[dist_self]
+  right_inv := by
+    intro x
+    calc (QuotientMV.lift g _) ⟦Function.surjInv hg x⟧
+    _ = g (Function.surjInv hg x) := by rw[QuotientMV.lift_mk]
+    _ = (g ∘ (Function.surjInv hg)) x := rfl
+    _ = id x := by rw[Function.comp_surjInv]
+    _ = x := rfl
