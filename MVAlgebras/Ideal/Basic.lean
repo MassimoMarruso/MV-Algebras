@@ -2,7 +2,7 @@ import MVAlgebras.Defs
 import MVAlgebras.Ideal.Defs
 import MVAlgebras.NaturalOrder
 
-variable {A : Type*} [MVAlgebra A]
+variable {A S : Type*} [MVAlgebra A] [SetLike S A] [MVAlgebra_IdealClass S A]
 
 namespace MVIdeal
 
@@ -10,7 +10,7 @@ def isMaximal (I : MVAlgebra_Ideal A) : Prop :=
   I ≠ ⊤ ∧ ∀ (J : MVAlgebra_Ideal A), I < J → J = ⊤
 
 class MaximalIdeal (A : Type*) [MVAlgebra A] extends MVAlgebra_Ideal A where
-  isMaximal' : carrier ≠ ⊤ ∧ ∀ (J : MVAlgebra_Ideal A), carrier < J → J = ⊤
+  isMaximal' : isMaximal toMVAlgebra_Ideal
 
 theorem maximal_iff (J : MVAlgebra_Ideal A) : isMaximal J ↔
   (∀ (x : A), ¬ x ∈ (J : Set A) ↔ ∃ (n : Nat), -(n • x) ∈ (J : Set A)) := by
@@ -119,13 +119,10 @@ theorem maximal_iff (J : MVAlgebra_Ideal A) : isMaximal J ↔
       unfold K at hy
       apply ((Set.mem_diff y).mp hy).left
 
-def isPrime (I : MVAlgebra_Ideal A) : Prop :=
+def isPrime (I : S) : Prop :=
   ∀ {x y : A}, x ⊖ y ∈ I ∨ y ⊖ x ∈ I
 
 class Prime_Ideal A [MVAlgebra A] extends MVAlgebra_Ideal A where
-  isPrime' : ∀ {x y : A}, x ⊖ y ∈ carrier ∨ y ⊖ x ∈ carrier
-
-instance (I : MVAlgebra_Ideal A) (h : isPrime I) : Prime_Ideal A where
-  isPrime' := h
+  isPrime' : isPrime toMVAlgebra_Ideal
 
 end MVIdeal

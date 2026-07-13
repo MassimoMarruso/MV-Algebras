@@ -283,7 +283,7 @@ lemma closure_eq (I : MVAlgebra_Ideal A) : closure I = I := by
     apply hJ
     apply hx
 
-instance : PartialOrder (MVAlgebra_Ideal A) where
+instance : PartialOrder S where
   le I J := (I : Set A) ≤ (J : Set A)
   le_refl I := by rfl
   le_antisymm I J := by
@@ -319,7 +319,7 @@ lemma closure_mono : Monotone (closure : Set A → MVAlgebra_Ideal A) := by
     apply hI
 
 open Classical in
-theorem closure_union (I : MVAlgebra_Ideal A) (z : A) :
+theorem closure_union (I : S) (z : A) :
   closure (I ∪ {z} : Set A) =
   {x : A | ∃ (a : I), ∃ (n : Nat), x ≤ (n • z) ⊕ a} := by
   rw[←closure_ofSubmonoid]

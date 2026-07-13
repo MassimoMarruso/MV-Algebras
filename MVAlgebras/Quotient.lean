@@ -50,8 +50,7 @@ instance : Reduced.MVAlgebra (Quotient (setoidOfDist I)) where
   neg_neg := by
     apply Quotient.ind
     intro x
-    rw[Quotient.lift_mk]
-    rw[Quotient.lift_mk]
+    repeat rw[Quotient.lift_mk]
     rw[neg_neg]
   oAdd := by
     refine Quotient.lift₂ (fun (x y : A) =>
@@ -68,9 +67,8 @@ instance : Reduced.MVAlgebra (Quotient (setoidOfDist I)) where
     intro x y
     apply Quotient.ind
     intro z
-    rw[Quotient.lift₂,Quotient.lift₂,Quotient.lift₂,Quotient.lift₂]
-    rw[Quotient.lift_mk,Quotient.lift_mk,Quotient.lift_mk,Quotient.lift_mk,Quotient.lift_mk]
-    rw[Quotient.lift_mk,Quotient.lift_mk,Quotient.lift_mk]
+    repeat rw[Quotient.lift₂]
+    repeat rw[Quotient.lift_mk]
     rw[Quotient.eq]
     rw[oAdd_assoc]
     suffices this : dist (x ⊕ (y ⊕ z)) (x ⊕ (y ⊕ z)) ∈ I from by apply this
@@ -83,7 +81,7 @@ instance : Reduced.MVAlgebra (Quotient (setoidOfDist I)) where
     have hz : 0 = Quotient.mk (setoidOfDist I) (0 : A) := by rfl
     rw[hz]
     rw[Quotient.lift₂]
-    rw[Quotient.lift_mk,Quotient.lift_mk]
+    repeat rw[Quotient.lift_mk]
     rw[Quotient.eq]
     suffices this : dist (x ⊕ 0) x ∈ I from by apply this
     rw[oAdd_zero]
@@ -94,10 +92,8 @@ instance : Reduced.MVAlgebra (Quotient (setoidOfDist I)) where
     apply Quotient.ind
     intro x
     rw[Quotient.lift₂]
-    rw[Quotient.lift_mk]
     rw[hz]
-    rw[Quotient.lift_mk]
-    rw[Quotient.lift_mk]
+    repeat rw[Quotient.lift_mk]
     rw[Quotient.eq]
     suffices this : dist (x ⊕ (- 0)) (- 0) ∈ I from by apply this
     rw[oAdd_not_zero]
@@ -108,10 +104,8 @@ instance : Reduced.MVAlgebra (Quotient (setoidOfDist I)) where
     intro x
     apply Quotient.ind
     intro y
-    rw[Quotient.lift₂,Quotient.lift₂,Quotient.lift₂,Quotient.lift₂]
-    rw[Quotient.lift_mk,Quotient.lift_mk,Quotient.lift_mk,Quotient.lift_mk]
-    rw[Quotient.lift_mk,Quotient.lift_mk,Quotient.lift_mk,Quotient.lift_mk]
-    rw[Quotient.lift_mk,Quotient.lift_mk,Quotient.lift_mk,Quotient.lift_mk]
+    repeat rw[Quotient.lift₂]
+    repeat rw[Quotient.lift_mk]
     rw[Quotient.eq]
     suffices this : dist ((-((-x) ⊕ y)) ⊕ y) ((-((-y) ⊕ x)) ⊕ x) ∈ I from by apply this
     rw[not_switch]
@@ -140,11 +134,9 @@ def mk' (I : MVAlgebra_Ideal A) : A →⊕ (A ⧸ I) where
 
 theorem ker_quot_self : ker (mk' I) = I := by
   ext x
-  calc x ∈ (ker (mk' I)).carrier
-  _ ↔ x ∈ ker (mk' I) := by rw[MVIdeal.carrier_eq_coe,SetLike.mem_coe]
+  calc x ∈ ker (mk' I)
   _ ↔ mk' I x ∈ ⊥ := by rw[mem_comap]
   _ ↔ mk' I x = 0 := by rw[MVIdeal.mem_bot_iff_zero]
-  _ ↔ Quotient.mk (setoidOfDist I) x = 0 := by rfl
   _ ↔ Quotient.mk (setoidOfDist I) x = Quotient.mk (setoidOfDist I) 0 := by rfl
   _ ↔ dist x 0 ∈ I := by rw[Quotient.eq] ; unfold setoidOfDist ; rfl
   _ ↔ ((x ⊖ 0) ⊕ (0 ⊖ x)) ∈ I := by rfl
@@ -175,9 +167,9 @@ def lift {A B : Type*} [MVAlgebra A] [MVAlgebra B]
     apply Quotient.ind
     intro x
     calc - Quotient.lift f _ ⟦x⟧
-    _ = - f x := by rfl
+    _ = - f x := by rw[Quotient.lift_mk]
     _ = f (- x) := by rw[map_not]
-    _ = Quotient.lift f _ (- ⟦x⟧) := by rfl
+    _ = Quotient.lift f _ (- ⟦x⟧) := by rw[←Quotient.lift_mk f _ (- x)] ; rfl
   map_add' := by
     apply Quotient.ind
     intro x
@@ -200,12 +192,17 @@ theorem eq {A : Type*} [MVAlgebra A] {I : MVAlgebra_Ideal A} {x y : A} :
     rw[Quotient.eq_iff_equiv]
     rfl
 
-theorem lift_ker_injective {A B : Type*} [MVAlgebra A] [MVAlgebra B] (f : A →⊕ B)
-  : Function.Injective (QuotientMV.lift f (le_refl _) : (A ⧸ ker f) →⊕ B) := by
+@[implicit_reducible]
+def quot_ker {A B : Type*} [MVAlgebra A] [MVAlgebra B] (f : A →⊕ B) :
+  (A ⧸ ker f) →⊕ B := QuotientMV.lift f (le_refl _)
+
+theorem quot_ker_injective {A B : Type*} [MVAlgebra A] [MVAlgebra B] (f : A →⊕ B)
+  : Function.Injective (quot_ker f) := by
     apply Quotient.ind
     intro x
     apply Quotient.ind
     intro y h
+    unfold quot_ker at h
     rw[lift_mk,lift_mk] at h
     suffices this :(setoidOfDist (ker f)) x y from by
       rw[←Quotient.eq] at this
@@ -218,14 +215,24 @@ theorem lift_ker_injective {A B : Type*} [MVAlgebra A] [MVAlgebra B] (f : A →�
     rw[←h]
     apply MVDist.dist_self
 
-end QuotientMV
+theorem quot_ker_bijective {A B : Type*} [MVAlgebra A] [MVAlgebra B]
+  (g : A →⊕ B) {hg : Function.Surjective g} : Function.Bijective (quot_ker g) := by
+    apply And.intro
+    case left =>
+      apply quot_ker_injective
+    case right =>
+      intro x
+      have ⟨x',hx'⟩ := hg x
+      use ⟦x'⟧
+      calc (quot_ker g) ⟦x'⟧
+      _ = QuotientMV.lift g (le_refl _) ⟦x'⟧ := rfl
+      _ = g x' := by rw[QuotientMV.lift_mk]
+      _ = x := by rw[hx']
 
 @[reducible]
-noncomputable def fun_quot_ker {A B : Type*} [MVAlgebra A] [MVAlgebra B] (g : A →⊕ B)
-  {hg : Function.Surjective g} : (A ⧸ (ker g)) ≃⊕ B where
-  toMVAlgebraHom := by
-    refine QuotientMV.lift g ?_
-    rfl
+noncomputable def quot_ker_eq {A B : Type*} [MVAlgebra A] [MVAlgebra B]
+  (g : A →⊕ B) {hg : Function.Surjective g} : (A ⧸ (ker g)) ≃⊕ B where
+  toMVAlgebraHom := QuotientMV.quot_ker g
   invFun (x : B) := ⟦Function.surjInv hg x⟧
   left_inv := by
     apply Quotient.ind
@@ -248,5 +255,6 @@ noncomputable def fun_quot_ker {A B : Type*} [MVAlgebra A] [MVAlgebra B] (g : A 
     calc (QuotientMV.lift g _) ⟦Function.surjInv hg x⟧
     _ = g (Function.surjInv hg x) := by rw[QuotientMV.lift_mk]
     _ = (g ∘ (Function.surjInv hg)) x := rfl
-    _ = id x := by rw[Function.comp_surjInv]
-    _ = x := rfl
+    _ = x := by rw[Function.comp_surjInv] ; rfl
+
+end QuotientMV

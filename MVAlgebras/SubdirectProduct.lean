@@ -20,36 +20,27 @@ theorem subdirect_rapresentation : isSubdirectProd A' A ↔ ∃ (J : ι → MVAl
   apply Iff.intro
   case mpr =>
     intro ⟨J,ε,hJ⟩
-    /-let f'' (i : ι) := (ε i).symm
-    have h1 (i : ι) : Function.LeftInverse (f'' i) (ε i) := by
-      apply Function.leftInverse_surjInv
-      apply hε i
-    have h2 (i : ι) : Function.RightInverse (f'' i) (ε i) := by
-      apply Function.rightInverse_surjInv
-    let f' (i : ι) : (A' ⧸ J i) →⊕ A i := by
-      apply MVHom.inverse (ε i) (f'' i) (h1 i) (h2 i)-/
     let f : A' →⊕ ∀ (i : ι), A i := {
-      toFun x i := (MVHom.symm (ε i)).toFun ⟦x⟧
+      toFun x i := (MVEquiv.symm (ε i)).toEquiv ⟦x⟧
       map_zero' := by
         ext i
-        calc (ε i).symm ⟦0⟧
-        _ = (ε i).symm (0 : A' ⧸ J i) := by rfl
-        _ = (MVHom.symm (ε i)).toMVAlgebraHom 0 := rfl
+        calc (ε i).symm.toEquiv ⟦0⟧
+        _ = (ε i).symm.toEquiv (0 : A' ⧸ J i) := by rfl
+        _ = (MVEquiv.symm (ε i)).toMVAlgebraHom 0 := rfl
         _ = 0 := by rw[map_zero]
       map_add' := by
         intro x y
         ext i
-        calc (ε i).symm ⟦x + y⟧
-        _ = (ε i).symm (⟦x⟧ + ⟦y⟧) := by rfl
-        _ = (ε i).symm (⟦x⟧ ⊕ ⟦y⟧) := by rfl
-        _ = (MVHom.symm (ε i)).toMVAlgebraHom (⟦x⟧ ⊕ ⟦y⟧) := rfl
-        _ = (MVHom.symm (ε i)).toMVAlgebraHom ⟦x⟧ ⊕ (MVHom.symm (ε i)).toMVAlgebraHom ⟦y⟧
+        calc (ε i).symm.toEquiv ⟦x + y⟧
+        _ = (ε i).symm.toEquiv (⟦x⟧ ⊕ ⟦y⟧) := by rfl
+        _ = (MVEquiv.symm (ε i)).toMVAlgebraHom (⟦x⟧ ⊕ ⟦y⟧) := rfl
+        _ = (MVEquiv.symm (ε i)).toMVAlgebraHom ⟦x⟧ ⊕ (MVEquiv.symm (ε i)).toMVAlgebraHom ⟦y⟧
           := by rw[map_oAdd]
       map_not := by
         intro x
         ext i
-        calc - ((MVHom.symm (ε i)).toMVAlgebraHom ⟦x⟧)
-        _ = (MVHom.symm (ε i)).toMVAlgebraHom ⟦- x⟧ := by rw[map_not] ; rfl
+        calc - ((MVEquiv.symm (ε i)).toMVAlgebraHom ⟦x⟧)
+        _ = (MVEquiv.symm (ε i)).toMVAlgebraHom ⟦- x⟧ := by rw[map_not] ; rfl
     }
     use f
     apply And.intro
@@ -62,64 +53,46 @@ theorem subdirect_rapresentation : isSubdirectProd A' A ↔ ∃ (J : ι → MVAl
       rw[mem_comap] at h
       rw[MVIdeal.mem_bot_iff_zero] at h
       unfold f at h
-      replace h : (fun (i : ι) => (ε i).symm ⟦x⟧) = 0 := by
-        apply h
-      replace h (i : ι) : (ε i).symm ⟦x⟧ = 0 := by
-        calc (ε i).symm ⟦x⟧
-        _ = (fun (i : ι) => (ε i).symm ⟦x⟧) i := rfl
-        _ = (0 : ∀ (i : ι), A i) i := by rw[h]
-        _ = 0 := rfl
-      replace h (i : ι) : (ε i).symm ⟦x⟧ ∈ (⊥ : MVAlgebra_Ideal (A i)) := by
-        rw[MVIdeal.mem_bot_iff_zero]
-        apply h i
-      replace h (i : ι) : (MVHom.symm (ε i)).toMVAlgebraHom ⟦x⟧ ∈ (⊥ : MVAlgebra_Ideal (A i)) := by
-        apply h
-      replace h (i : ι) :
-        ⟦x⟧ ∈ comap (MVHom.symm (ε i)).toMVAlgebraHom (⊥ : MVAlgebra_Ideal (A i)) := by
-        apply h
-      replace h (i : ι) :
-        ⟦x⟧ ∈ ker (MVHom.symm (ε i)).toMVAlgebraHom := by apply h
-      have h' (i : ι) : ker (MVHom.symm (ε i)).toMVAlgebraHom = ⊥ := by
-        rw[←ker_bot_iff_injective]
-        suffices this : Function.Injective (ε i).symm from by
-          apply this
-        intro x y hh
-        rw[Equiv.apply_eq_iff_eq] at hh
-        apply hh
-      replace h (i : ι) : ⟦x⟧ ∈ (⊥ : MVAlgebra_Ideal (A' ⧸ J i)) := by
-        rw[←h' i]
-        apply h i
-      replace h (i : ι) : (⟦x⟧ : A' ⧸ J i) = (0 : (A' ⧸ J i)) :=
-         MVIdeal.mem_bot_iff_zero.mp (h i)
-      replace h (i : ι) : (⟦x⟧ : A' ⧸ J i) = (⟦0⟧ : (A' ⧸ J i)) := by
-        calc ⟦x⟧
-        _ = (0 : (A' ⧸ J i)) := by rw[h i]
-      replace h (i : ι) : dist x 0 ∈ J i := Quotient.eq.mp (h i)
-      replace h (i : ι) : x ∈ J i := by
-        rw[MVDist.dist_zero] at h
-        apply h i
       rw[←hJ]
-      intro I'
-      rw[Set.mem_setOf]
-      intro ⟨I,hI,hI'⟩
+      intro I' ⟨I,hI,hI'⟩
       rw[←hI']
       rw[SetLike.mem_coe]
       have ⟨i,hI⟩ := hI
       rw[←hI]
-      suffices this : x ∈ J i from by apply this
-      apply h i
+      replace h : (fun (i : ι) => (ε i).symm.toEquiv ⟦x⟧) = 0 := by
+        apply h
+      replace h : (ε i).symm.toEquiv ⟦x⟧ = 0 := by
+        calc (ε i).symm.toEquiv ⟦x⟧
+        _ = (fun (i : ι) => (ε i).symm.toEquiv ⟦x⟧) i := rfl
+        _ = (0 : ∀ (i : ι), A i) i := by rw[h]
+        _ = 0 := rfl
+      rw[←MVIdeal.mem_bot_iff_zero] at h
+      replace h :
+        ⟦x⟧ ∈ ker (MVEquiv.symm (ε i)).toMVAlgebraHom := by apply h
+      have h' : ker (MVEquiv.symm (ε i)).toMVAlgebraHom = ⊥ := by
+        rw[←ker_bot_iff_injective]
+        apply Equiv.injective
+      rw[h'] at h
+      replace h : (⟦x⟧ : A' ⧸ J i) = (0 : (A' ⧸ J i)) :=
+         MVIdeal.mem_bot_iff_zero.mp h
+      replace h : (⟦x⟧ : A' ⧸ J i) = (⟦0⟧ : (A' ⧸ J i)) := by
+        rw[h]
+        rfl
+      replace h : dist x 0 ∈ J i := Quotient.eq.mp h
+      rw[MVDist.dist_zero] at h
+      apply h
     case right =>
       intro i
       unfold f
-      suffices this : Function.Surjective (fun (x : A') =>  (ε i).symm ⟦x⟧) from by
-        apply this
+      suffices this : Function.Surjective (fun (x : A') =>  (ε i).symm.toEquiv ⟦x⟧)
+        from by apply this
       apply Function.Surjective.comp
       case hg =>
         intro x
         use (ε i).toEquiv x
-        calc (ε i).symm ((ε i).toEquiv x)
-        _ = (ε i).symm ((ε i).symm.symm x) := by rw[Equiv.symm_symm]
-        _ = x := by rw[Equiv.apply_symm_apply (ε i).symm]
+        calc (ε i).toEquiv.symm ((ε i).toEquiv x)
+        _ = (ε i).toEquiv.symm ((ε i).toEquiv.symm.symm x) := by rw[Equiv.symm_symm]
+        _ = x := by rw[Equiv.apply_symm_apply (ε i).toEquiv.symm]
       case hf =>
         apply Quotient.ind
         intro x
@@ -160,7 +133,8 @@ theorem subdirect_rapresentation : isSubdirectProd A' A ↔ ∃ (J : ι → MVAl
           calc (MVHom.comp (proj i) f) (dist
             (Function.surjInv (hs i) (((MVHom.comp (proj i) f) x))) x)
           _ = dist ((MVHom.comp (proj i) f)
-            (Function.surjInv (hs i) (((MVHom.comp (proj i) f) x)))) ((MVHom.comp (proj i) f) x)
+            (Function.surjInv (hs i) (((MVHom.comp (proj i) f) x))))
+            ((MVHom.comp (proj i) f) x)
             := by rw[map_dist]
           _ = dist (((MVHom.comp (proj i) f) x)) ((MVHom.comp (proj i) f) x)
             := by rw[Function.surjInv_eq (hs i)]
@@ -177,7 +151,7 @@ theorem subdirect_rapresentation : isSubdirectProd A' A ↔ ∃ (J : ι → MVAl
             by rw[QuotientMV.lift_mk]
           _ = x := by rw[Function.surjInv_eq (hs i)]
       }
-    use fun (i : ι) => MVHom.symm (ε i)
+    use fun (i : ι) => MVEquiv.symm (ε i)
     rw[←le_bot_iff]
     intro x h
     rw[SetLike.mem_coe] at h
@@ -187,14 +161,14 @@ theorem subdirect_rapresentation : isSubdirectProd A' A ↔ ∃ (J : ι → MVAl
     rw[mem_comap]
     rw[MVIdeal.mem_bot_iff_zero]
     ext i
-    replace h (i : ι) : x ∈ J i := by
+    replace h : x ∈ J i := by
       apply h
       use (J i)
       apply And.intro
       case right => rfl
       case left => use i
     unfold J at h
-    replace h (i : ι) : (MVHom.comp (proj i) f) x = 0 := by
+    replace h : (MVHom.comp (proj i) f) x = 0 := by
       rw[←MVIdeal.mem_bot_iff_zero]
-      apply h i
-    apply h i
+      apply h
+    apply h

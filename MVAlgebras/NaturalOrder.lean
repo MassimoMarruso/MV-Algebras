@@ -3,7 +3,7 @@ import Mathlib.Order.Lattice
 import Mathlib.Order.BoundedOrder.Basic
 import Mathlib.Algebra.Order.Monoid.Canonical.Defs
 
-/- This file introduces what is called the "Natural Order" on MVAlgebras
+/-This file introduces what is called the "Natural Order" on MVAlgebras
   The beginning of the file introduces a notation ≤ without any propreties, then
   equivalent notions are derived. Finally, it is proven to be a partial order
   This proof is from the first chapter of Mundici

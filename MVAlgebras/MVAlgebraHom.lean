@@ -223,10 +223,7 @@ lemma ker_bot_iff_injective (f : F) : Function.Injective f ↔ ker f = (⊥ : MV
     rw[mem_bot_iff_zero]
     calc f x = 0
     _ ↔ f x = f 0 := by rw[map_zero]
-    _ ↔ x = 0 := by
-      apply Iff.intro
-      case mp => apply h
-      case mpr => tauto
+    _ ↔ x = 0 := by rw[Function.Injective.eq_iff h]
   case mpr =>
     intro h x y hf
     have hf' {x y : A} (hf : f x = f y) : (y ⊙ (- x)) = 0 := by
@@ -243,79 +240,15 @@ lemma ker_bot_iff_injective (f : F) : Function.Injective f ↔ ker f = (⊥ : MV
     calc x
     _ = 0 ⊕ x := by simp
     _ = (y ⊙ (- x)) ⊕ x := by rw[hf₁]
-    _ = - ((- y) ⊕ (- - x)) ⊕ x := by simp
     _ = - ((- y) ⊕ x) ⊕ x := by simp
     _ = - ((- x) ⊕ y) ⊕ y := by rw[not_switch]
-    _ = ((- - x) ⊙ (- y)) ⊕ y := by simp
-    _ = (x ⊙ (- y)) ⊕ y := by simp
-    _ = ((- y) ⊙ x) ⊕ y := by simp
     _ = (x ⊙ (- y)) ⊕ y := by simp
     _ = 0 ⊕ y := by rw[hf₂]
     _ = y := by simp
 
 --theorem ker_prime_iff_MVChain (f : F) : isPrime (ker f) ↔ (¬ isTrivial B ∧ )
 
-class MVEquiv (A : Type*) (B : Type*) [MVAlgebra A] [MVAlgebra B] extends
-  Equiv A B, A →⊕ B
-
-infix:77 " ≃⊕ " => MVEquiv
-
-instance {A : Type*} {B : Type*} [MVAlgebra A] [MVAlgebra B] {f : A ≃⊕ B} : AddEquiv A B where
-  toEquiv := f.toEquiv
-  map_add' := f.map_add
-
-instance {A : Type*} {B : Type*} [MVAlgebra A] [MVAlgebra B] : FunLike (A ≃ B) A B where
-  coe f := f.toFun
-  coe_injective' := by
-    intro f g h
-    ext x
-    replace h : f.toFun = g.toFun := by
-      apply h
-    calc f x
-    _ = f.toFun x := rfl
-    _ = g.toFun x := by rw[h]
-    _ = g x := rfl
-
 namespace MVHom
-
-@[reducible]
-def symm {A B : Type*} [MVAlgebra A] [MVAlgebra B] (f : A ≃⊕ B)
- : B ≃⊕ A where
-  invFun := f.toEquiv
-  toFun := f.symm
-  left_inv := by
-    intro x
-    rw[Equiv.apply_symm_apply]
-  right_inv := by
-    intro x
-    rw[Equiv.symm_apply_apply]
-  map_zero' := by
-    rw[←Equiv.apply_eq_iff_eq f.toEquiv]
-    rw[Equiv.apply_symm_apply]
-    symm
-    calc f.toEquiv 0
-    _ = f.toMVAlgebraHom 0 := rfl
-    _ = 0 := by rw[map_zero]
-  map_add' := by
-    intro x y
-    rw[←Equiv.apply_eq_iff_eq f.toEquiv]
-    rw[Equiv.apply_symm_apply]
-    symm
-    calc f.toEquiv (f.symm x + f.symm y)
-    _ = f.toMVAlgebraHom (f.symm x + f.symm y) := rfl
-    _ = f.toMVAlgebraHom (f.symm x ⊕ f.symm y) := rfl
-    _ = f.toMVAlgebraHom (f.symm x) ⊕ f.toMVAlgebraHom (f.symm y) := by rw[map_oAdd]
-    _ = f.toEquiv (f.symm x) ⊕ f.toEquiv (f.symm y) := rfl
-    _ = x ⊕ y := by rw[Equiv.apply_symm_apply,Equiv.apply_symm_apply]
-  map_not := by
-    intro x
-    rw[←Equiv.apply_eq_iff_eq f.toEquiv]
-    rw[Equiv.apply_symm_apply]
-    calc f.toEquiv (- (f.symm x))
-    _ = f.toMVAlgebraHom (- f.symm x) := rfl
-    _ = - f.toMVAlgebraHom (f.symm x) := by rw[←map_not]
-    _ = - f.toEquiv (f.symm x) := rfl
-    _ = - x := by rw[Equiv.apply_symm_apply]
 
 theorem map_bot {A B : Type*} [MVAlgebra A] [MVAlgebra B] {f : A →⊕ B}
   {hi : Function.Injective f} : f '' (⊥ : MVAlgebra_Ideal A) = (⊥ : MVAlgebra_Ideal B) := by
@@ -337,14 +270,10 @@ theorem map_bot {A B : Type*} [MVAlgebra A] [MVAlgebra B] {f : A →⊕ B}
     rw[SetLike.mem_coe] at h
     rw[mem_bot_iff_zero] at h
     rw[h]
-    rw[Set.mem_image]
     use 0
     apply And.intro
-    case left =>
-      rw[SetLike.mem_coe]
-      rw[mem_bot_iff_zero]
-    case right =>
-      apply map_zero
+    case left => apply zero_mem
+    case right => apply map_zero
 
 @[implicit_reducible]
 def comp {A B C : Type*} [MVAlgebra A] [MVAlgebra B] [MVAlgebra C] (f : B →⊕ C)
@@ -360,3 +289,85 @@ def comp {A B C : Type*} [MVAlgebra A] [MVAlgebra B] [MVAlgebra C] (f : B →⊕
     _ = (f ∘ g) (-x) := rfl
 
 end MVHom
+
+@[ext]
+class MVEquiv (A : Type*) (B : Type*) [MVAlgebra A] [MVAlgebra B] extends
+  AddEquiv A B, A →⊕ B
+
+infix:77 " ≃⊕ " => MVEquiv
+
+namespace MVEquiv
+
+@[reducible]
+def symm {A B : Type*} [MVAlgebra A] [MVAlgebra B] (f : A ≃⊕ B)
+ : B ≃⊕ A where
+  invFun := f.toFun
+  toFun := f.toEquiv.symm
+  left_inv := by
+    intro x
+    calc f.toEquiv (f.toEquiv.symm x)
+    _ = x := by rw[Equiv.apply_symm_apply]
+  right_inv := by
+    intro x
+    calc f.toEquiv.symm (f.toEquiv x)
+    _ = x := by rw[Equiv.symm_apply_apply]
+  map_zero' := by
+    rw[←Equiv.apply_eq_iff_eq f.toEquiv]
+    rw[Equiv.apply_symm_apply]
+    symm
+    calc f.toEquiv 0
+    _ = f.toMVAlgebraHom 0 := rfl
+    _ = 0 := by rw[map_zero]
+  map_add' := by
+    intro x y
+    rw[←Equiv.apply_eq_iff_eq f.toEquiv]
+    rw[Equiv.apply_symm_apply]
+    symm
+    calc f.toEquiv (f.toEquiv.symm x + f.toEquiv.symm y)
+    _ = f.toMVAlgebraHom (f.toEquiv.symm x ⊕ f.toEquiv.symm y) := rfl
+    _ = f.toMVAlgebraHom (f.toEquiv.symm x) ⊕ f.toMVAlgebraHom (f.toEquiv.symm y)
+      := by rw[map_oAdd]
+    _ = f.toEquiv (f.toEquiv.symm x) ⊕ f.toEquiv (f.toEquiv.symm y) := rfl
+    _ = x ⊕ y := by rw[Equiv.apply_symm_apply,Equiv.apply_symm_apply]
+  map_not := by
+    intro x
+    rw[←Equiv.apply_eq_iff_eq f.toEquiv]
+    rw[Equiv.apply_symm_apply]
+    calc f.toEquiv (- (f.toEquiv.symm x))
+    _ = f.toAddEquiv.toFun (- f.toEquiv.symm x) := rfl
+    _ = - f.toAddEquiv.toFun (f.toEquiv.symm x) := by rw[←map_not]
+    _ = - f.toEquiv (f.toEquiv.symm x) := rfl
+    _ = - x := by rw[Equiv.apply_symm_apply]
+
+@[implicit_reducible]
+def comp {A B C : Type*} [MVAlgebra A] [MVAlgebra B] [MVAlgebra C] (f : A ≃⊕ B)
+  (g : B ≃⊕ C) : A ≃⊕ C where
+  toFun := g.toFun ∘ f.toFun
+  invFun := f.symm.toFun ∘ g.toEquiv.symm.toFun
+  map_zero' := by
+    calc g.toAddMonoidHom (f.toAddMonoidHom 0)
+    _ = g.toAddMonoidHom 0 := by rw[map_zero]
+    _ = 0 := by rw[map_zero]
+  map_add' := by
+    intro x y
+    calc g.toAddMonoidHom (f.toAddMonoidHom (x + y))
+    _ = g.toAddMonoidHom (f.toAddMonoidHom x + f.toAddMonoidHom y) := by rw[map_add]
+    _ = g.toAddMonoidHom (f.toAddMonoidHom x) + g.toAddMonoidHom (f.toAddMonoidHom y) :=
+      by rw[map_add]
+  map_not := by
+    intro x
+    calc - (g.toFun (f.toFun x))
+    _ = (g.toFun (- f.toFun x)) := by rw[map_not]
+    _ = (g.toFun (f.toFun (- x))) := by rw[map_not]
+  left_inv := by
+    intro x
+    calc f.toEquiv.symm (g.toEquiv.symm (g.toEquiv (f.toEquiv x)))
+    _ = f.toEquiv.symm ((f.toEquiv x)) := by rw[Equiv.symm_apply_apply]
+    _ = x := by rw[Equiv.symm_apply_apply]
+  right_inv := by
+    intro x
+    calc g.toEquiv (f.toEquiv (f.toEquiv.symm (g.toEquiv.symm x)))
+    _ = g.toEquiv ( (g.toEquiv.symm x)) := by rw[Equiv.apply_symm_apply]
+    _ = x := by rw[Equiv.apply_symm_apply]
+
+end MVEquiv
