@@ -10,7 +10,6 @@ import MVAlgebras.Defs
 
 variable {A : Type*}
 
-
 namespace Reduced
 
 class MVAlgebra (A : Type*) extends InvolutiveNeg A, Zero A, OAdd A where

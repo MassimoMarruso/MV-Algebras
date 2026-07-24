@@ -227,7 +227,7 @@ lemma subset_closure' (I : Set A) :
       subst_eqs
       exact h
 
-theorem closure_ofSubmonoid (W : Set A) :
+theorem closure_eq_closure' (W : Set A) :
   closure' W = closure W := by
     ext x
     apply Iff.intro
@@ -283,33 +283,35 @@ lemma closure_eq (I : MVAlgebra_Ideal A) : closure I = I := by
     apply hJ
     apply hx
 
+instance : LE S where
+  le I J := (I : Set A) ⊆ (J : Set A)
+
 instance : PartialOrder S where
-  le I J := (I : Set A) ≤ (J : Set A)
-  le_refl I := by rfl
+  le_refl I := by
+    exact subset_refl (I : Set A)
   le_antisymm I J := by
     intro h₁ h₂
     apply SetLike.coe_injective'
     apply subset_antisymm h₁ h₂
   le_trans I J K := by
-    apply le_trans
+    intro h₁ h₂
+    apply subset_trans h₁ h₂
 
 lemma closure_mono : Monotone (closure : Set A → MVAlgebra_Ideal A) := by
   intro I J hle x hx
   rw[SetLike.mem_coe]
   intro Y ⟨K,hK,heq⟩
   rw[←heq]
-  rw[SetLike.mem_coe] at hx
   rw[SetLike.mem_coe]
-  have h' := hx (closure J)
   rw[←closure_eq K]
   rw[heq]
   rw[←SetLike.mem_coe]
+  rw[SetLike.mem_coe] at hx
   apply hx
   use closure Y
   apply And.intro
   case right => rfl
   case left =>
-    rw[Set.mem_setOf]
     intro y hI
     apply subset_closure Y
     rw[←heq]
@@ -322,7 +324,7 @@ open Classical in
 theorem closure_union (I : S) (z : A) :
   closure (I ∪ {z} : Set A) =
   {x : A | ∃ (a : I), ∃ (n : Nat), x ≤ (n • z) ⊕ a} := by
-  rw[←closure_ofSubmonoid]
+  rw[←closure_eq_closure']
   ext x
   apply Iff.intro
   case mp =>
