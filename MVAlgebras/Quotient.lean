@@ -257,4 +257,176 @@ noncomputable def quot_ker_eq {A B : Type*} [MVAlgebra A] [MVAlgebra B]
     _ = (g ∘ (Function.surjInv hg)) x := rfl
     _ = x := by rw[Function.comp_surjInv] ; rfl
 
+theorem second_iso_theorem {A B C : Type*} [MVAlgebra A] [MVAlgebra B] [MVAlgebra C]
+  (f : A →⊕ B) (g : A →⊕ C) (hf : Function.Surjective f) (hg : Function.Surjective g)
+  : (ker f ≤ ker g) ↔ (∃ (k : B →⊕ C), Function.Surjective k ∧ MVHom.comp k f = g) := by
+    apply Iff.intro
+    case mp =>
+      intro hker
+      let k : B →⊕ C := {
+        toFun := g ∘ (Function.surjInv hf)
+        map_zero' := by
+          rw[←MVIdeal.mem_bot_iff_zero]
+          rw[Function.comp_apply]
+          rw[←mem_comap]
+          apply hker
+          rw[SetLike.mem_coe]
+          rw[mem_comap]
+          rw[MVIdeal.mem_bot_iff_zero]
+          rw[Function.surjInv_eq hf]
+        map_add' := by
+          intro x y
+          refine le_antisymm ?h1 ?h2
+          case h1 =>
+            rw[le_iff_oNeg]
+            calc g (Function.surjInv hf (x ⊕ y)) ⊖
+              (g (Function.surjInv hf x) ⊕ g (Function.surjInv hf y))
+            _ = g ((Function.surjInv hf (x ⊕ y)) ⊖
+              ((Function.surjInv hf x) ⊕ (Function.surjInv hf y))) := by rw[←map_oAdd,map_oNeg]
+            _ = 0  := by
+              rw[←MVIdeal.mem_bot_iff_zero]
+              rw[←mem_comap]
+              apply hker
+              rw[SetLike.mem_coe]
+              rw[mem_comap]
+              rw[map_oNeg,map_oAdd]
+              repeat rw[Function.surjInv_eq hf]
+              rw[oNeg_self]
+              rw[MVIdeal.mem_bot_iff_zero]
+          case h2 =>
+            rw[le_iff_oNeg]
+            calc (g (Function.surjInv hf x) ⊕ g (Function.surjInv hf y)) ⊖
+              (g (Function.surjInv hf (x ⊕ y)))
+            _ = g (((Function.surjInv hf x) ⊕ (Function.surjInv hf y)) ⊖
+              (Function.surjInv hf (x ⊕ y))) := by rw[←map_oAdd,←map_oNeg]
+            _ = 0 := by
+              rw[←MVIdeal.mem_bot_iff_zero]
+              rw[←mem_comap]
+              apply hker
+              rw[SetLike.mem_coe]
+              rw[mem_comap]
+              rw[map_oNeg,map_oAdd]
+              repeat rw[Function.surjInv_eq hf]
+              rw[oNeg_self]
+              rw[MVIdeal.mem_bot_iff_zero]
+        map_not := by
+          intro x
+          refine le_antisymm ?h1 ?h2
+          case h1 =>
+            repeat rw[Function.comp_apply]
+            rw[le_iff_oNeg]
+            rw[map_not]
+            rw[←map_oNeg]
+            rw[←MVIdeal.mem_bot_iff_zero]
+            rw[←mem_comap]
+            apply hker
+            rw[SetLike.mem_coe]
+            rw[mem_comap]
+            rw[map_oNeg]
+            rw[←map_not]
+            repeat rw[Function.surjInv_eq hf]
+            rw[oNeg_self]
+            rw[MVIdeal.mem_bot_iff_zero]
+          case h2 =>
+            repeat rw[Function.comp_apply]
+            rw[le_iff_oNeg]
+            rw[map_not]
+            rw[←map_oNeg]
+            rw[←MVIdeal.mem_bot_iff_zero]
+            rw[←mem_comap]
+            apply hker
+            rw[SetLike.mem_coe]
+            rw[mem_comap]
+            rw[map_oNeg]
+            rw[←map_not]
+            repeat rw[Function.surjInv_eq hf]
+            rw[oNeg_self]
+            rw[MVIdeal.mem_bot_iff_zero]
+      }
+      use k
+      apply And.intro
+      case right =>
+        ext x
+        refine le_antisymm ?h1 ?h2
+        case h1 =>
+          rw[le_iff_oNeg]
+          suffices this : (g (Function.surjInv hf (f x))) ⊖ (g x) = 0 from by
+            apply this
+          rw[←map_oNeg]
+          rw[←MVIdeal.mem_bot_iff_zero]
+          rw[←mem_comap]
+          apply hker
+          rw[SetLike.mem_coe]
+          rw[mem_comap]
+          rw[map_oNeg]
+          rw[Function.surjInv_eq hf]
+          rw[oNeg_self]
+          rw[MVIdeal.mem_bot_iff_zero]
+        case h2 =>
+          rw[le_iff_oNeg]
+          suffices this : (g x) ⊖ (g (Function.surjInv hf (f x))) = 0 from by
+            apply this
+          rw[←map_oNeg]
+          rw[←MVIdeal.mem_bot_iff_zero]
+          rw[←mem_comap]
+          apply hker
+          rw[SetLike.mem_coe]
+          rw[mem_comap]
+          rw[map_oNeg]
+          rw[Function.surjInv_eq hf]
+          rw[oNeg_self]
+          rw[MVIdeal.mem_bot_iff_zero]
+      case left =>
+        intro x
+        have ⟨x',hx'⟩ := hg x
+        use f x'
+        suffices this :
+          g (Function.surjInv hf (f x')) = x from by
+          apply this
+        rw[←hx']
+        refine le_antisymm ?h1 ?h2
+        case h1 =>
+          rw[le_iff_oNeg]
+          rw[←MVIdeal.mem_bot_iff_zero]
+          rw[←map_oNeg]
+          rw[←mem_comap]
+          apply hker
+          rw[SetLike.mem_coe]
+          rw[mem_comap]
+          rw[map_oNeg]
+          rw[MVIdeal.mem_bot_iff_zero]
+          rw[Function.surjInv_eq hf]
+          rw[oNeg_self]
+        case h2 =>
+          rw[le_iff_oNeg]
+          rw[←MVIdeal.mem_bot_iff_zero]
+          rw[←map_oNeg]
+          rw[←mem_comap]
+          apply hker
+          rw[SetLike.mem_coe]
+          rw[mem_comap]
+          rw[map_oNeg]
+          rw[MVIdeal.mem_bot_iff_zero]
+          rw[Function.surjInv_eq hf]
+          rw[oNeg_self]
+    case mpr =>
+      intro ⟨k,hs,hc⟩ x h
+      rw[SetLike.mem_coe]
+      rw[mem_comap]
+      rw[SetLike.mem_coe] at h
+      rw[mem_comap] at h
+      rw[MVIdeal.mem_bot_iff_zero]
+      rw[MVIdeal.mem_bot_iff_zero] at h
+      rw[←hc]
+      suffices this : k (f x) = 0 from by
+        apply this
+      rw[h]
+      rw[map_zero]
+
+
+
+
+
+
+
 end QuotientMV
