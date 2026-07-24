@@ -175,6 +175,10 @@ lemma oMul_not_self (x : A) : x ⊙ (- x) = 0 := by
   _ = 0 := by rw[not_one]
 
 @[simp]
+lemma oNeg_self (x : A) : x ⊖ x = 0 := by
+  apply oMul_not_self
+
+@[simp]
 lemma not_self_oMul (x : A) : (- x) ⊙ x = 0 := by
   rw[oMul_comm]
   rw[oMul_not_self]
